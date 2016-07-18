@@ -100,7 +100,7 @@ class FakeRe(object):
 		return getattr(re, attr)
 sanitizer.re = FakeRe()
 
-from html5lib.constants import tokenTypes, namespaces
+from html5lib.constants import namespaces
 
 # But we define our own sanitizer mixin subclass and filter to be able to
 # customize the allowed tags and protocols
@@ -168,10 +168,7 @@ class _SanitizerFilter(sanitizer.Filter):
 		for token in super(_SanitizerFilter, self).__iter__():
 			if token:
 				token_type = token["type"]
-				if token_type in tokenTypes.keys():
-					token_type = tokenTypes[token_type]
-
-				if token_type == tokenTypes['Characters']:
+				if token_type == 'Characters':
 					for text_token in self._find_links_in_text(token):
 						yield text_token
 				else:
@@ -219,10 +216,8 @@ class _SanitizerFilter(sanitizer.Filter):
 		"""
 		#accommodate filters which use token_type differently
 		token_type = token["type"]
-		if token_type in tokenTypes.keys():
-			token_type = tokenTypes[token_type]
 
-		if token_type == tokenTypes['Characters'] and self._ignoring_stack:
+		if token_type == 'Characters' and self._ignoring_stack:
 			# character data beneath a rejected element
 			return None
 
