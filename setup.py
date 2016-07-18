@@ -42,7 +42,7 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'dolmen.builtins',
-        'html5lib == 0.9999999',
+        'html5lib > 0.9999999',
         'lxml',
         'plone.i18n < 3.0', # 3.0 adds hards deps on Products.CMFCore and Zope2
         'repoze.lru',
