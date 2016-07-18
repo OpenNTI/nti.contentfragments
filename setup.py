@@ -41,8 +41,9 @@ setup(
     namespace_packages=['nti'],
     tests_require=TESTS_REQUIRE,
     install_requires=[
+        'setuptools',
         'dolmen.builtins',
-        'html5lib == 0.9999999',
+        'html5lib',
         'lxml',
         'plone.i18n < 3.0', # 3.0 adds hards deps on Products.CMFCore and Zope2
         'repoze.lru',
