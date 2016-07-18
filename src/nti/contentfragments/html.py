@@ -23,6 +23,7 @@ from html5lib import HTMLParser
 from html5lib import serializer
 from html5lib import treewalkers
 from html5lib import treebuilders
+from html5lib.filters import sanitizer
 
 from repoze.lru import lru_cache
 
@@ -33,12 +34,12 @@ etree_tostring = getattr(etree, 'tostring')
 # It was simply defined as:
 #
 # class XHTMLSerializer(HTMLSerializer):
-# 	quote_attr_values = True
-# 	minimize_boolean_attributes = False
-# 	use_trailing_solidus = True
-# 	escape_lt_in_attrs = True
-# 	omit_optional_tags = False
-# 	escape_rcdata = True
+#	quote_attr_values = True
+#	minimize_boolean_attributes = False
+#	use_trailing_solidus = True
+#	escape_lt_in_attrs = True
+#	omit_optional_tags = False
+#	escape_rcdata = True
 #
 # Note that this did not actually guarantee that the results were valid XHTML
 # (which is why it was removed). We define our own version
@@ -48,7 +49,7 @@ etree_tostring = getattr(etree, 'tostring')
 class Serializer(serializer.HTMLSerializer):
 
 	# attribute quoting options
-	quote_attr_values = True
+	quote_attr_values = 'always'
 
 	# tag syntax options
 	omit_optional_tags = False
@@ -59,7 +60,7 @@ class Serializer(serializer.HTMLSerializer):
 	# escaping options
 	escape_lt_in_attrs = True
 	escape_rcdata = True
-	
+
 	# miscellaneous options
 	# In 1.0b3, the order changed to preserve
 	# the source order. But for tests, its best of
@@ -69,7 +70,6 @@ class Serializer(serializer.HTMLSerializer):
 	strip_whitespace = True
 	sanitize = False
 
-from html5lib.filters import sanitizer
 
 from nti.contentfragments.interfaces import IHyperlinkFormatter
 from nti.contentfragments.interfaces import IHTMLContentFragment
@@ -78,42 +78,6 @@ from nti.contentfragments.interfaces import IPlainTextContentFragment
 from nti.contentfragments.interfaces import SanitizedHTMLContentFragment
 from nti.contentfragments.interfaces import ISanitizedHTMLContentFragment
 
-class _SliceDict(dict):
-	"""
-	There is a bug in html5lib 0.95 (and 1.0b1 and b3): The _base.TreeWalker now returns
-	a dictionary from normalizeAttrs. Some parts of the code, notably sanitizer.py 171
-	haven't been updated from 0.90 and expect a list. They try to reverse it using a
-	slice, and the result is a type error. We can fix this.
-	"""
-
-	def __getitem__(self, key):
-		# recognize the reversing slice, [::-1]
-		if 	isinstance(key, slice) and key.start is None and \
-			key.stop is None and key.step == -1:
-			return self.items()[::-1]
-		return dict.__getitem__(self, key)
-
-from html5lib.sanitizer import HTMLSanitizerMixin
-
-# There is a bug in 0.95 and 1.0b1 and b3: the sanitizer converts attribute dicts
-# to lists when they should stay dicts. We fix that globally.
-_orig_sanitize = HTMLSanitizerMixin.sanitize_token
-
-def _sanitize_token(self, token):
-	__traceback_info__ = token
-	to_dict = False
-
-	if token.get('name') in self.allowed_elements and isinstance(token.get('data'), dict):
-		if not isinstance(token.get('data') , _SliceDict):
-			token['data'] = _SliceDict({k[1]:v for k, v in token['data'].items()})
-		to_dict = True
-	result = _orig_sanitize(self, token)
-	__traceback_info__ = token, result
-	if to_dict:
-		# TODO: We're losing namespaces for attributes in this process
-		result['data'] = {(None, k):v for k, v in result['data']}
-	return result
-HTMLSanitizerMixin.sanitize_token = _sanitize_token
 
 # HTML5Lib has a bug in its horribly-complicated regular expressions
 # it uses for CSS (https://github.com/html5lib/html5lib-python/issues/69):
@@ -123,20 +87,20 @@ HTMLSanitizerMixin.sanitize_token = _sanitize_token
 # in place. This is a very targeted fix.
 # TODO: Could this allow malformed CSS through now, enough to crash
 # the rest of the method?
-from html5lib import sanitizer as _html5_sanitizer_mod
+
 
 class FakeRe(object):
 
 	def match(self, regex, val):
-		if regex == """^([:,;#%.\sa-zA-Z0-9!]|\w-\w|'[\s\w]+'|"[\s\w]+"|\([\d,\s]+\))*$""":
-			regex = """^([:,;#%.\sa-zA-Z0-9!-]|\w-\w|'[\s\w-]+'|"[\s\w-]+"|\([\d,\s]+\))*$"""
+		if regex == r"""^([:,;#%.\sa-zA-Z0-9!]|\w-\w|'[\s\w]+'|"[\s\w]+"|\([\d,\s]+\))*$""":
+			regex = r"""^([:,;#%.\sa-zA-Z0-9!-]|\w-\w|'[\s\w-]+'|"[\s\w-]+"|\([\d,\s]+\))*$"""
 		return re.match(regex, val)
 
 	def __getattr__(self, attr):
 		return getattr(re, attr)
-_html5_sanitizer_mod.re = FakeRe()
+sanitizer.re = FakeRe()
 
-from html5lib.constants import tokenTypes
+from html5lib.constants import tokenTypes, namespaces
 
 # But we define our own sanitizer mixin subclass and filter to be able to
 # customize the allowed tags and protocols
@@ -144,52 +108,61 @@ class _SanitizerFilter(sanitizer.Filter):
 	# In order to be able to serialize a complete document, we
 	# must whitelist the root tags as of 0.95. But we don't want the mathml and svg tags
 	# TODO: Maybe this means now we can parse and serialize in one step?
-	acceptable_elements = ['a', 'audio',
-						   'b', 'big', 'br',
-						   'center',
-						   'em',
-						   'font',
-						   'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr',
-						   'i', 'img',
-						   'p', 'pre',
-						   'small', 'span', 'strong', 'sub', 'sup',
-						   'tt',
-						   'u',
-						   'ul', 'li', 'ol']
-	allowed_elements = acceptable_elements + ['html', 'head', 'body']
 
-	# Lock down attributes for safety
-	allowed_attributes = ['color', 
-						  'data-id',
-						  'controls',
-						  'href',
-						  'src', 
-						  'style',
-						  'xml:lang']
-
-	# We use data: URIs to communicate images and sounds in one
-	# step. FIXME: They aren't really safe and we should have tighter restrictions
-	# on them, such as by size.
-	allowed_protocols = HTMLSanitizerMixin.acceptable_protocols + ['data']
-
-	# Lock down CSS for safety
-	allowed_css_properties = ['font-style',
-							  'font',
-							  'font-weight',
-							  'font-size',
-							  'font-family',
-							  'color',
-							  'text-align',
-							  'text-decoration']
-
-	rejected_elements = ['script', 'style']  # Things we don't even try to preserve the text content of
-
-	_rejecting_stack = ()
-
-	def __init__(self, source):
-		super(_SanitizerFilter, self).__init__(source)
+	def __init__(self, *args, **kwargs):
+		super(_SanitizerFilter, self).__init__(*args, **kwargs)
 		self._rejecting_stack = []
 		self.link_finder = component.queryUtility(IHyperlinkFormatter)
+
+		acceptable_elements = frozenset([
+			'a', 'audio',
+			'b', 'big', 'br',
+			'center',
+			'em',
+			'font',
+			'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr',
+			'i', 'img',
+			'p', 'pre',
+			'small', 'span', 'strong', 'sub', 'sup',
+			'tt',
+			'u',
+			'ul', 'li', 'ol'
+		])
+		allowed_elements = acceptable_elements | frozenset(['html', 'head', 'body'])
+		self.allowed_elements = frozenset(((namespaces['html'], tag) for tag in allowed_elements))
+
+		# Lock down attributes for safety
+		allowed_attributes = frozenset([
+			'color',
+			'data-id',
+			'controls',
+			'href',
+			'src',
+			'style',
+			'xml:lang'
+		])
+		self.allowed_attributes = frozenset(((None, attr) for attr in allowed_attributes))
+
+		# We use data: URIs to communicate images and sounds in one
+		# step. FIXME: They aren't really safe and we should have tighter restrictions
+		# on them, such as by size.
+		self.allowed_protocols = self.allowed_protocols | frozenset(['data'])
+
+		# Lock down CSS for safety
+		self.allowed_css_properties = frozenset([
+			'font-style',
+			'font',
+			'font-weight',
+			'font-size',
+			'font-family',
+			'color',
+			'text-align',
+			'text-decoration'
+		])
+
+		# Things we don't even try to preserve the text content of
+		# NOTE: These are not namespaced
+		self.rejected_elements = frozenset(['script', 'style'])
 
 	def __iter__(self):
 		for token in super(_SanitizerFilter, self).__iter__():
@@ -241,8 +214,10 @@ class _SanitizerFilter(sanitizer.Filter):
 		and to reject certain tags and their bodies altogether. If we instead write escaped
 		version of the tag, then we get them back when we serialize to text, which is not what we
 		want. The rejected tags have no sensible text content.
+
+		This works in cooperation with :meth:`disallowed_token`.
 		"""
-		# accommodate filters which use token_type differently
+		#accommodate filters which use token_type differently
 		token_type = token["type"]
 		if token_type in tokenTypes.keys():
 			token_type = tokenTypes[token_type]
@@ -251,33 +226,32 @@ class _SanitizerFilter(sanitizer.Filter):
 			# character data beneath a rejected element
 			return None
 
-		if 		token_type in (tokenTypes["StartTag"], tokenTypes["EndTag"], 
-							   tokenTypes["EmptyTag"]) \
-			and token["name"] not in self.allowed_elements:
-			# We're making some assumptions here, like all the things we reject are not empty
-			if token['name'] in self.rejected_elements:
-				if token_type == tokenTypes['StartTag']:
-					self._rejecting_stack.append(token)
-				else:
-					self._rejecting_stack.pop()
-
-				return None
-			if self._rejecting_stack:
-				# element data beneath something we're rejecting
-				return None
-
-			token['data'] = ''
-
-			if token["type"] in tokenTypes.keys():
-				token["type"] = "Characters"
-			else:
-				token["type"] = tokenTypes["Characters"]
-
-			del token["name"]
-			return token
-
 		result = super(_SanitizerFilter, self).sanitize_token(token)
 		return result
+
+	def disallowed_token(self, token):
+		token_type = token['type']
+		# We're making some assumptions here, like all the things we reject are not empty
+		if token['name'] in self.rejected_elements:
+			if token_type == 'StartTag':
+				self._rejecting_stack.append(token)
+			else:
+				self._rejecting_stack.pop()
+			return None
+		if self._rejecting_stack:
+			# element data beneath something we're rejecting
+			return None
+
+		token['data'] = ''
+
+		if token["type"] in tokenTypes.keys():
+			token["type"] = "Characters"
+		else:
+			token["type"] = tokenTypes["Characters"]
+
+		del token["name"]
+		return token
+
 
 def _html5lib_tostring(doc, sanitize=True):
 	"""
@@ -420,6 +394,7 @@ def _sanitize_user_html_to_text(user_input):
 	if IPlainTextContentFragment.providedBy(user_input):
 		return user_input
 	__traceback_info__ = user_input, type(user_input)
+
 	return sanitize_user_html(user_input, method='text')
 
 @interface.implementer(IPlainTextContentFragment)
@@ -429,6 +404,7 @@ def _html_to_sanitized_text(html):
 	if IPlainTextContentFragment.providedBy(html):
 		return html
 	__traceback_info__ = html, type(html)
+
 	return _doc_to_plain_text(_to_sanitized_doc(html))
 
 @interface.implementer(IPlainTextContentFragment)
