@@ -111,7 +111,6 @@ class _SanitizerFilter(sanitizer.Filter):
 
 	def __init__(self, *args, **kwargs):
 		super(_SanitizerFilter, self).__init__(*args, **kwargs)
-		self._rejecting_stack = []
 		self.link_finder = component.queryUtility(IHyperlinkFormatter)
 
 		acceptable_elements = frozenset([
@@ -162,7 +161,8 @@ class _SanitizerFilter(sanitizer.Filter):
 
 		# Things we don't even try to preserve the text content of
 		# NOTE: These are not namespaced
-		self.rejected_elements = frozenset(['script', 'style'])
+		self._ignored_elements = frozenset(['script', 'style'])
+		self._ignoring_stack = []
 
 	def __iter__(self):
 		for token in super(_SanitizerFilter, self).__iter__():
@@ -222,7 +222,7 @@ class _SanitizerFilter(sanitizer.Filter):
 		if token_type in tokenTypes.keys():
 			token_type = tokenTypes[token_type]
 
-		if token_type == tokenTypes['Characters'] and self._rejecting_stack:
+		if token_type == tokenTypes['Characters'] and self._ignoring_stack:
 			# character data beneath a rejected element
 			return None
 
@@ -232,22 +232,21 @@ class _SanitizerFilter(sanitizer.Filter):
 	def disallowed_token(self, token):
 		token_type = token['type']
 		# We're making some assumptions here, like all the things we reject are not empty
-		if token['name'] in self.rejected_elements:
+		if token['name'] in self._ignored_elements:
 			if token_type == 'StartTag':
-				self._rejecting_stack.append(token)
-			else:
-				self._rejecting_stack.pop()
-			return None
-		if self._rejecting_stack:
-			# element data beneath something we're rejecting
+				self._ignoring_stack.append(token)
+			elif token_type == 'EndTag':
+				self._ignoring_stack.pop()
 			return None
 
+		if self._ignoring_stack:
+		 	# element data beneath something we're rejecting
+		 	return None
+
+		# Otherwise, don't escape the tag, simply drop the tag name, but
+		# preserve the contents.
 		token['data'] = ''
-
-		if token["type"] in tokenTypes.keys():
-			token["type"] = "Characters"
-		else:
-			token["type"] = tokenTypes["Characters"]
+		token["type"] = "Characters"
 
 		del token["name"]
 		return token
