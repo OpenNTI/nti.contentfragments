@@ -1,0 +1,36 @@
+language: python
+sudo: false
+python:
+  - 2.7
+#  - 3.4
+# PyPy disabled because Travis has a really old version that crashes
+# with lxml. We could do what gevent, etc, do and upgrade it ourself...
+#  - pypy
+script:
+  - nose2 -v -C
+after_success:
+  - coveralls
+notifications:
+  email: dev-regression-tests@nextthought.com
+
+install:
+  - pip install -U pip setuptools
+# XXX: Something is wrong with the sdist of nti.schema; if we leave
+# off the -e , configure.zcml is missing.
+# XXX: Nose2 breaks if the nti namespace package is a mix of editable
+# and non-editable installs.
+  - pip install -e 'git+https://github.com/NextThought/nti.schema.git#egg=nti.schema'
+  - pip install -e 'git+https://github.com/NextThought/nti.testing.git#egg=nti.testing'
+  - pip install -U coveralls coverage
+  - pip install -U -e ".[test]"
+
+# cache: pip seems not to work if `install` is replaced (https://github.com/travis-ci/travis-ci/issues/3239)
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.venv
+    - $HOME/.runtimes
+    - $HOME/.wheelhouse
+
+before_cache:
+    - rm -f $HOME/.cache/pip/log/debug.log
