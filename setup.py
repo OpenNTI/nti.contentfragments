@@ -43,7 +43,7 @@ setup(
     install_requires=[
         'setuptools',
         'dolmen.builtins',
-        'html5lib[datrie] > 0.99999999', # install datrie if appropriate for the platform
+        'html5lib[datrie]', # > 0.99999999 install datrie if appropriate for the platform
         'lxml', # we required lxml implementation details, can't use xml.etree.ElementTree, even on PyPy.
         'plone.i18n < 3.0', # 3.0 adds hards deps on Products.CMFCore and Zope2
         'repoze.lru',
