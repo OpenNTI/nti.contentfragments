@@ -70,14 +70,12 @@ class Serializer(serializer.HTMLSerializer):
 	strip_whitespace = True
 	sanitize = False
 
-
 from nti.contentfragments.interfaces import IHyperlinkFormatter
 from nti.contentfragments.interfaces import IHTMLContentFragment
 from nti.contentfragments.interfaces import PlainTextContentFragment
 from nti.contentfragments.interfaces import IPlainTextContentFragment
 from nti.contentfragments.interfaces import SanitizedHTMLContentFragment
 from nti.contentfragments.interfaces import ISanitizedHTMLContentFragment
-
 
 # HTML5Lib has a bug in its horribly-complicated regular expressions
 # it uses for CSS (https://github.com/html5lib/html5lib-python/issues/69):
@@ -87,7 +85,6 @@ from nti.contentfragments.interfaces import ISanitizedHTMLContentFragment
 # in place. This is a very targeted fix.
 # TODO: Could this allow malformed CSS through now, enough to crash
 # the rest of the method?
-
 
 class FakeRe(object):
 
@@ -235,8 +232,8 @@ class _SanitizerFilter(sanitizer.Filter):
 			return None
 
 		if self._ignoring_stack:
-		 	# element data beneath something we're rejecting
-		 	return None
+			# element data beneath something we're rejecting
+			return None
 
 		# Otherwise, don't escape the tag, simply drop the tag name, but
 		# preserve the contents.
@@ -245,7 +242,6 @@ class _SanitizerFilter(sanitizer.Filter):
 
 		del token["name"]
 		return token
-
 
 def _html5lib_tostring(doc, sanitize=True):
 	"""
