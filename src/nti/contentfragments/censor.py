@@ -33,7 +33,7 @@ from lxml import etree
 
 from html5lib import treebuilders
 
-from nti.common.property import Lazy
+from zope.cachedescriptors.property import Lazy
 
 from nti.contentfragments.interfaces import CensoredContentEvent
 from nti.contentfragments.interfaces import IHTMLContentFragment
@@ -297,7 +297,7 @@ def censor_before_text_assigned(fragment, target, event):
 
 			# notify censoring
 			context = event.context or target
-			notify(CensoredContentEvent(fragment, censored_fragment, 
+			notify(CensoredContentEvent(fragment, censored_fragment,
 										event.name, context))
 
 			# as an optimization when we are called directly

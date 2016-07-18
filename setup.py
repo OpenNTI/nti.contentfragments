@@ -9,14 +9,9 @@ entry_points = {
 }
 
 TESTS_REQUIRE = [
-    'nose',
-    'nose-timer',
-    'nose-pudb',
-    'nose-progressive',
     'nose2[coverage_plugin]',
     'pyhamcrest',
     'zope.testing',
-    'nti.nose_traceback_info',
     'nti.testing'
 ]
 
@@ -47,9 +42,9 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'dolmen.builtins',
-        'html5lib',
+        'html5lib == 0.9999999',
         'lxml',
-        'plone.i18n',
+        'plone.i18n < 3.0', # 3.0 adds hards deps on Products.CMFCore and Zope2
         'repoze.lru',
         'zope.browserresource',
         'zope.component',
