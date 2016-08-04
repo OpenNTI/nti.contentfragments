@@ -18,6 +18,7 @@ except NameError:
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import assert_that
+from hamcrest import same_instance
 
 from zope import component
 from zope import interface
@@ -29,6 +30,8 @@ from nti.contentfragments import schema as frag_schema
 from nti.contentfragments import interfaces as frag_interfaces
 
 from nti.contentfragments.tests import ContentfragmentsLayerTest
+
+from nti.testing.base import AbstractTestBase
 
 class TestCensor(ContentfragmentsLayerTest):
 
@@ -151,6 +154,21 @@ class TestCensor(ContentfragmentsLayerTest):
             assert_that(policy.censor(bad_val, None),
                         is_('<html><head/><body><b>****</b></body></html>'))
 
+    def test_unparse_html_and_default_policy(self):
+        policy = frag_censor.DefaultCensoredContentPolicy()
+        class BadThingParseError(object):
+            def lower(self):
+                # But as text, the first thing we do is lower it...
+                return "lower"
+            def __iter__(self):
+                return iter('lower')
+        text = policy.censor_html(BadThingParseError(), None)
+        assert_that(text, is_('lower'))
+
+    def test_noop(self):
+        policy = frag_censor.NoOpCensoredContentPolicy()
+        assert_that(policy.censor(self, None), is_(self))
+
     def test_schema_event_censoring(self):
 
         class ICensored(interface.Interface):
@@ -169,8 +187,41 @@ class TestCensor(ContentfragmentsLayerTest):
 
         bad_val = codecs.encode('Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq', 'rot13')
         bad_val = frag_interfaces.UnicodeContentFragment(bad_val)
-
+        censored_val = 'This is ******* stupid, you ************ *******'
         censored.body = bad_val
 
         assert_that(censored.body,
-                    is_('This is ******* stupid, you ************ *******'))
+                    is_(censored_val))
+
+        # We don't register anything for this event in the config
+        class SequenceEvent(object):
+            name = Censored.body.field.__name__
+            context = None
+            object = None
+
+        evt = SequenceEvent()
+        evt.context = censored
+
+        sequence = [bad_val]
+        evt.object = sequence
+        frag_censor.censor_before_assign_components_of_sequence(None, None, None)
+
+        frag_censor.censor_before_assign_components_of_sequence(sequence, censored, evt)
+
+        assert_that(evt.object, is_not(same_instance(sequence)))
+        assert_that(evt.object, is_([censored_val]))
+
+    def test_before_assigned_idempotent(self):
+        x = frag_interfaces.CensoredPlainTextContentFragment("hi")
+        assert_that(frag_censor.censor_before_text_assigned(x, None, None),
+                    is_((None, None)))
+
+class TestCensorUnconfigured(AbstractTestBase):
+
+    def test_before_assigned_no_policy(self):
+        class Event(object):
+            name = ''
+        assert_that(frag_censor.censor_before_text_assigned(self, None, Event()),
+                    is_((self, False)))
+        assert_that(frag_censor.censor_assign(self, None, 'name'),
+                    is_(self))

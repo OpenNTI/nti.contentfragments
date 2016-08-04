@@ -276,7 +276,8 @@ class PlainTextContentFragment(UnicodeContentFragment):
 @interface.implementer(IPlainTextContentFragment)
 @component.adapter(IPlainTextContentFragment)
 def _plain_text_to_plain_text(text):
-    return text
+    # We shouldn't actually be able to get here.
+    return text # pragma: no cover
 
 from zope.schema.interfaces import ITokenizedTerm
 

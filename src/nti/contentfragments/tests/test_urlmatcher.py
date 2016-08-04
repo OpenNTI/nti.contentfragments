@@ -27,6 +27,13 @@ class TestUrlMatcher(ContentfragmentsLayerTest):
               u'http://www.bleachget.com/watch/bleach-episode-271</a></body></html>'
         assert_that(self.formatter.format(frg_interfaces.IHTMLContentFragment(html)), is_(exp))
 
+    def test_simple_str(self):
+        html = u'<html><head/><body>ichigo dies in http://www.bleachget.com/watch/bleach-episode-271</body></html>'
+        exp = u'<html><head/><body>ichigo dies in <a href="http://www.bleachget.com/watch/bleach-episode-271">' + \
+              u'http://www.bleachget.com/watch/bleach-episode-271</a></body></html>'
+        assert_that(self.formatter.format(html), is_(exp))
+
+
     def test_double(self):
         html = u'<html><head/><body>yahoo in http://yahoo.com and google in http://www.google.com</body></html>'
         exp = u'<html><head/><body>yahoo in <a href="http://yahoo.com">http://yahoo.com</a> and google in ' + \
@@ -65,7 +72,7 @@ class TestUrlMatcher(ContentfragmentsLayerTest):
         assert_that(self.formatter.format(frg_interfaces.IHTMLContentFragment(html)), is_(exp))
 
     def test_utz(self):
-        html= u"foo<div><br></div><div>http://google.com</div><div><br></div><div>bar</div><div><br></div><div>http://yahoo.com</div>"
+        html = u"foo<div><br></div><div>http://google.com</div><div><br></div><div>bar</div><div><br></div><div>http://yahoo.com</div>"
         exp = u'<html><head/><body>foo<div><br/></div><div><a href="http://google.com">http://google.com</a></div>' +\
                 '<div><br/></div><div>bar</div><div><br/></div><div><a href="http://yahoo.com">http://yahoo.com</a></div></body></html>'
         assert_that(self.formatter.format(frg_interfaces.IHTMLContentFragment(html)), is_(exp))

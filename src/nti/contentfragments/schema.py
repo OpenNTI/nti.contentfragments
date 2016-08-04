@@ -12,17 +12,19 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
-from nti.contentfragments.interfaces import IContentFragment
-from nti.contentfragments.interfaces import HTMLContentFragment
-from nti.contentfragments.interfaces import IHTMLContentFragment
-from nti.contentfragments.interfaces import LatexContentFragment
-from nti.contentfragments.interfaces import ILatexContentFragment
-from nti.contentfragments.interfaces import UnicodeContentFragment
-from nti.contentfragments.interfaces import IUnicodeContentFragment
-from nti.contentfragments.interfaces import PlainTextContentFragment
-from nti.contentfragments.interfaces import IPlainTextContentFragment
-from nti.contentfragments.interfaces import SanitizedHTMLContentFragment
-from nti.contentfragments.interfaces import ISanitizedHTMLContentFragment
+# pylint: disable=too-many-ancestors
+
+from .interfaces import IContentFragment
+from .interfaces import HTMLContentFragment
+from .interfaces import IHTMLContentFragment
+from .interfaces import LatexContentFragment
+from .interfaces import ILatexContentFragment
+from .interfaces import UnicodeContentFragment
+from .interfaces import IUnicodeContentFragment
+from .interfaces import PlainTextContentFragment
+from .interfaces import IPlainTextContentFragment
+from .interfaces import SanitizedHTMLContentFragment
+from .interfaces import ISanitizedHTMLContentFragment
 
 from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
@@ -41,7 +43,22 @@ def _massage_kwargs(self, kwargs):
         kwargs['defaultFactory'] = self._impl
     return kwargs
 
-class TextUnicodeContentFragment(Object, Text):
+class _FromUnicodeMixin(object):
+
+
+    def __init__(self, *args, **kwargs):
+        super(_FromUnicodeMixin, self).__init__(self._iface,
+                                                *args,
+                                                **_massage_kwargs(self, kwargs))
+
+    def fromUnicode(self, string):
+        """
+        We implement :class:`.IFromUnicode` by adapting the given object
+        to our text schema.
+        """
+        return super(_FromUnicodeMixin, self).fromUnicode(self.schema(string))
+
+class TextUnicodeContentFragment(_FromUnicodeMixin, Object, Text):
     """
     A :class:`zope.schema.Text` type that also requires the object implement
     an interface descending from :class:`~.IUnicodeContentFragment`.
@@ -53,17 +70,8 @@ class TextUnicodeContentFragment(Object, Text):
     _iface = IUnicodeContentFragment
     _impl = UnicodeContentFragment
 
-    def __init__(self, *args, **kwargs):
-        super(TextUnicodeContentFragment, self).__init__(self._iface, *args, **_massage_kwargs(self, kwargs))
 
-    def fromUnicode(self, string):
-        """
-        We implement :class:`.IFromUnicode` by adapting the given object
-        to our text schema.
-        """
-        return super(TextUnicodeContentFragment, self).fromUnicode(self.schema(string))
-
-class TextLineUnicodeContentFragment(Object, TextLine):
+class TextLineUnicodeContentFragment(_FromUnicodeMixin, Object, TextLine):
     """
     A :class:`zope.schema.TextLine` type that also requires the object implement
     an interface descending from :class:`~.IUnicodeContentFragment`.
@@ -78,15 +86,6 @@ class TextLineUnicodeContentFragment(Object, TextLine):
     _iface = IContentFragment
     _impl = UnicodeContentFragment
 
-    def __init__(self, *args, **kwargs):
-        super(TextLineUnicodeContentFragment, self).__init__(self._iface, *args, **_massage_kwargs(self, kwargs))
-
-    def fromUnicode(self, string):
-        """
-        We implement :class:`.IFromUnicode` by adapting the given object
-        to our text schema.
-        """
-        return super(TextLineUnicodeContentFragment, self).fromUnicode(self.schema(string))
 
 class LatexFragmentTextLine(TextLineUnicodeContentFragment):
     """
@@ -179,7 +178,7 @@ def Title():
     field.
     """
     return PlainTextLine(
-                    max_length=140,  # twitter
-                    required=False,
-                    title="The human-readable title of this object",
-                    __name__='title')
+        max_length=140,  # twitter
+        required=False,
+        title="The human-readable title of this object",
+        __name__='title')

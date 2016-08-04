@@ -58,6 +58,7 @@ try:
     unicode
 except NameError:
     PY2 = False
+    unicode = str
     _ARRAY_CHAR_TYPE = 'u'
 else:
     PY2 = True
@@ -71,8 +72,10 @@ def _get_censored_fragment(org_fragment, new_fragment, factory=CensoredUnicodeCo
         result = org_fragment.censored(new_fragment)
     except AttributeError:
         result = factory(new_fragment)
-        if not ICensoredUnicodeContentFragment.providedBy(result):
-            interface.alsoProvides(result, ICensoredUnicodeContentFragment)
+        # We used to check this and then do alsoProvides if it wasn't there,
+        # but this is only called with two factory arguments, both of which
+        # provide the interface.
+        assert ICensoredUnicodeContentFragment.providedBy(result)
     return result
 
 @interface.implementer(ICensoredContentStrategy)
@@ -97,9 +100,6 @@ class SimpleReplacementCensoredContentStrategy(object):
         return result
 
 class BasicScanner(object):
-
-    def sort_ranges(self, ranges):
-        return sorted(ranges)
 
     def test_range(self, new_range, yielded):
         for t in yielded:
@@ -263,7 +263,7 @@ class DefaultCensoredContentPolicy(object):
                         text = self.censor_text(UnicodeContentFragment(text), target)
                         setattr(node, name, text)
 
-            docstr = unicode(etree_tostring(doc))
+            docstr = etree_tostring(doc, encoding=unicode)
             # be sure to return the best interface
             result = _get_censored_fragment(fragment, docstr,
                                             CensoredHTMLContentFragment)
@@ -285,7 +285,7 @@ class NoOpCensoredContentPolicy(object):
     def __init__(self, *args, **kwargs):
         pass
 
-    def censor(self, fragment, target):
+    def censor(self, fragment, _target):
         return fragment
 
 from nti.schema.interfaces import BeforeTextAssignedEvent

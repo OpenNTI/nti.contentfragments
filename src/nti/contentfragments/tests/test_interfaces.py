@@ -12,11 +12,13 @@ from hamcrest import is_not
 from hamcrest import raises
 from hamcrest import calling
 from hamcrest import assert_that
+from hamcrest import same_instance
 does_not = is_not
 
 
 from nti.testing.matchers import validly_provides
 from nti.testing.matchers import verifiably_provides
+from nti.testing.matchers import is_false
 
 import unittest
 import mimetypes
@@ -29,13 +31,18 @@ from zope import interface
 
 from zope.schema.interfaces import ConstraintNotSatisfied
 
-from nti.contentfragments.interfaces import HTMLContentFragment
-from nti.contentfragments.interfaces import UnicodeContentFragment
-from nti.contentfragments.interfaces import PlainTextContentFragment
-from nti.contentfragments.interfaces import IPlainTextContentFragment
-from nti.contentfragments.interfaces import SanitizedHTMLContentFragment
+from . import ContentfragmentsLayerTest
 
-from nti.contentfragments.schema import PlainTextLine
+from ..interfaces import HTMLContentFragment
+from ..interfaces import UnicodeContentFragment
+from ..interfaces import PlainTextContentFragment
+from ..interfaces import IPlainTextContentFragment
+from ..interfaces import SanitizedHTMLContentFragment
+from ..interfaces import IUnicodeContentFragment
+
+from nti.contentfragments.schema import Title
+from nti.contentfragments.schema import Tag
+from nti.contentfragments.schema import TextUnicodeContentFragment
 
 try:
     unicode
@@ -78,6 +85,28 @@ class TestMisc(unittest.TestCase):
     def test_mime_types(self):
         assert_that(mimetypes.guess_type('foo.jsonp'),
                     is_(('application/json', None)))
+
+    def test_cant_get_dict_weakref_of_frag(self):
+        frag = HTMLContentFragment()
+        assert_that(calling(getattr).with_args(frag, '__dict__'),
+                    raises(AttributeError))
+        assert_that(calling(getattr).with_args(frag, '__weakref__'),
+                    raises(AttributeError))
+
+    def test_setstate_discards_extra(self):
+        frag = HTMLContentFragment()
+        frag.__setstate__({'key': 1, 'okey': 2})
+
+    def test_upper_preserves(self):
+        h = HTMLContentFragment("HI")
+        assert_that(h.upper(), is_(same_instance(h)))
+
+    def test_container_methods(self):
+        h = HTMLContentFragment()
+        assert_that(calling(h.__delitem__).with_args(1),
+                    raises(TypeError))
+        assert_that(calling(h.__setitem__).with_args(1, 'b'),
+                    raises(TypeError))
 
     def test_cannot_set_attributes_but_can_provide_interfaces_across_pickles(self):
 
@@ -147,5 +176,20 @@ class TestMisc(unittest.TestCase):
         ipt = PlainTextContentFragment('This\nis\nnot\nvalid')
         assert_that(ipt, validly_provides(IPlainTextContentFragment))
 
-        assert_that(calling(PlainTextLine().validate).with_args(ipt),
+        assert_that(calling(Title().validate).with_args(ipt),
                     raises(ConstraintNotSatisfied))
+
+class TestMiskConfigured(ContentfragmentsLayerTest):
+
+    def test_TextUnicodeContentFragment(self):
+        t = TextUnicodeContentFragment(default='abc')
+        assert_that(t.default, validly_provides(IUnicodeContentFragment))
+
+
+        assert_that(t.fromUnicode(t.default), is_(t.default))
+
+    def test_Tag(self):
+        t = Tag()
+
+        assert_that(t.fromUnicode("HI"), is_('hi'))
+        assert_that(t.constraint("oh hi"), is_false())
