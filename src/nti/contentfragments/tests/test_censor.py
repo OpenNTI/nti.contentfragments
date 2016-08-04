@@ -30,8 +30,6 @@ from nti.contentfragments import interfaces as frag_interfaces
 
 from nti.contentfragments.tests import ContentfragmentsLayerTest
 
-resource_filename = __import__('pkg_resources').resource_filename
-
 class TestCensor(ContentfragmentsLayerTest):
 
     def test_defaults(self):
@@ -70,7 +68,7 @@ class TestCensor(ContentfragmentsLayerTest):
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('*********'))
 
-        bad_val = codecs.encode('ohyyfuvg','rot13')
+        bad_val = codecs.encode('ohyyfuvg', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('********'))
 
@@ -127,9 +125,7 @@ class TestCensor(ContentfragmentsLayerTest):
         assert_that(ranges, is_([(10, 15)]))
 
     def test_pipeline_scanner(self):
-        profanity_file = resource_filename(__name__, '../profanity_list.txt')
-        with open(profanity_file, 'rU') as f:
-            profanity_list = {codecs.encode(x, 'rot13').strip() for x in f.readlines()}
+        profanity_list = frag_censor._profane_words
 
         scanners = []
         scanners.append(frag_censor.WordMatchScanner((), ('stupid',)))
@@ -140,11 +136,11 @@ class TestCensor(ContentfragmentsLayerTest):
 
         bad_val = codecs.encode('Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
-                     is_('This is ******* ******, you ************ *******'))
+                    is_('This is ******* ******, you ************ *******'))
 
         bad_val = codecs.encode('ohggre pbafgvghgvba pbzchgngvba', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
-                     is_('butter constitution computation'))
+                    is_('butter constitution computation'))
 
     def test_html_and_default_policy(self):
         policy = frag_censor.DefaultCensoredContentPolicy()

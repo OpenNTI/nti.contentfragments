@@ -22,6 +22,7 @@ logger = __import__('logging').getLogger(__name__)
 import re
 import array
 import codecs
+import io
 
 from zope import component
 from zope import interface
@@ -36,19 +37,19 @@ from html5lib import treebuilders
 
 from zope.cachedescriptors.property import Lazy
 
-from nti.contentfragments.interfaces import CensoredContentEvent
-from nti.contentfragments.interfaces import IHTMLContentFragment
-from nti.contentfragments.interfaces import ICensoredContentPolicy
-from nti.contentfragments.interfaces import UnicodeContentFragment
-from nti.contentfragments.interfaces import ICensoredContentScanner
-from nti.contentfragments.interfaces import ICensoredContentStrategy
-from nti.contentfragments.interfaces import CensoredHTMLContentFragment
-from nti.contentfragments.interfaces import CensoredUnicodeContentFragment
-from nti.contentfragments.interfaces import IPunctuationMarkExpressionPlus
-from nti.contentfragments.interfaces import ICensoredUnicodeContentFragment
+from .interfaces import CensoredContentEvent
+from .interfaces import IHTMLContentFragment
+from .interfaces import ICensoredContentPolicy
+from .interfaces import UnicodeContentFragment
+from .interfaces import ICensoredContentScanner
+from .interfaces import ICensoredContentStrategy
+from .interfaces import CensoredHTMLContentFragment
+from .interfaces import CensoredUnicodeContentFragment
+from .interfaces import IPunctuationMarkExpressionPlus
+from .interfaces import ICensoredUnicodeContentFragment
 
 etree_tostring = getattr(etree, 'tostring')
-resource_filename = __import__('pkg_resources').resource_filename
+resource_string = __import__('pkg_resources').resource_string
 
 # certain old versions of Python 2 up through at least 2.7.9 can't
 # handle a unicode character as the array.array descriptor. 2.7.12
@@ -56,8 +57,10 @@ resource_filename = __import__('pkg_resources').resource_filename
 try:
     unicode
 except NameError:
+    PY2 = False
     _ARRAY_CHAR_TYPE = 'u'
 else:
+    PY2 = True
     _ARRAY_CHAR_TYPE = b'u'
 
 def punkt_re_char(lang='en'):
@@ -195,12 +198,14 @@ class PipeLineMatchScanner(BasicScanner):
                     yield match_range
 
 def _read(fname, rot13):
-    fname = resource_filename(__name__, fname)
-    with open(fname, 'rU') as src:
-        if rot13:
-            words = {codecs.encode(x, 'rot13').strip().lower() for x in src.readlines()}
-        else:
-            words = {x.strip().lower() for x in src.readlines()}
+    data = resource_string(__name__, fname)
+    data_text = data.decode('utf-8')
+    # Go through StringIO for universal newline handling
+    src = io.StringIO(data_text)
+    if rot13:
+        words = {codecs.encode(x, 'rot13').strip().lower() for x in src.readlines()}
+    else:
+        words = {x.strip().lower() for x in src.readlines()}
     return frozenset(words)
 
 _white_words = _read('white_list.txt', False)
