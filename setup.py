@@ -19,8 +19,8 @@ py_impl = getattr(platform, 'python_implementation', lambda: None)
 IS_PYPY = py_impl() == 'PyPy'
 
 def _read(fname):
-	with codecs.open(fname, encoding='utf-8') as f:
-		return f.read()
+    with codecs.open(fname, encoding='utf-8') as f:
+        return f.read()
 
 setup(
     name='nti.contentfragments',
@@ -50,7 +50,6 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
-        'dolmen.builtins',
         'html5lib[datrie]', # > 0.99999999 install datrie if appropriate for the platform
         'lxml', # we required lxml implementation details, can't use xml.etree.ElementTree, even on PyPy.
         'repoze.lru',
@@ -66,6 +65,10 @@ setup(
     ],
     extras_require={
         'test': TESTS_REQUIRE,
+        ':python_version == "2.7"': [
+            # Not ported to Py3
+            'dolmen.builtins',
+        ],
     },
     entry_points=entry_points,
 )

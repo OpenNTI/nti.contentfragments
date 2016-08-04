@@ -53,7 +53,8 @@ try:
 except (ImportError, NameError):
     # Py3
     # We get NameError if it is installed, but still tries to use
-    # `unicode`
+    # `unicode` and fails.
+    assert unicode is str
     class IUnicode(interface.Interface):
         """Marker interface for unicode strings"""
     interface.classImplements(str, IUnicode)
