@@ -12,6 +12,7 @@ from hamcrest import is_not
 from hamcrest import raises
 from hamcrest import calling
 from hamcrest import assert_that
+from hamcrest import same_instance
 does_not = is_not
 
 
@@ -84,6 +85,28 @@ class TestMisc(unittest.TestCase):
     def test_mime_types(self):
         assert_that(mimetypes.guess_type('foo.jsonp'),
                     is_(('application/json', None)))
+
+    def test_cant_get_dict_weakref_of_frag(self):
+        frag = HTMLContentFragment()
+        assert_that(calling(getattr).with_args(frag, '__dict__'),
+                    raises(AttributeError))
+        assert_that(calling(getattr).with_args(frag, '__weakref__'),
+                    raises(AttributeError))
+
+    def test_setstate_discards_extra(self):
+        frag = HTMLContentFragment()
+        frag.__setstate__({'key': 1, 'okey': 2})
+
+    def test_upper_preserves(self):
+        h = HTMLContentFragment("HI")
+        assert_that(h.upper(), is_(same_instance(h)))
+
+    def test_container_methods(self):
+        h = HTMLContentFragment()
+        assert_that(calling(h.__delitem__).with_args(1),
+                    raises(TypeError))
+        assert_that(calling(h.__setitem__).with_args(1, 'b'),
+                    raises(TypeError))
 
     def test_cannot_set_attributes_but_can_provide_interfaces_across_pickles(self):
 
