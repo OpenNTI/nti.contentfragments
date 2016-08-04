@@ -19,36 +19,36 @@ from nti.contentfragments.interfaces import IPunctuationMarkPatternPlus
 from nti.contentfragments.interfaces import IPunctuationMarkExpressionPlus
 
 default_punk_mark_expression = (ur'[\?|!|(|)|"|\''
-								u'|\u2039|\u203a'  # single angle quotes
-								u'|\u2018|\u2019'  # single curly quotes
-								u'|\u201c|\u201d'  # double curly quotes
-								u'|\u00ab|\u00bb'  # double angle quotes
-								ur'|`|{|}|\[|\]|:|;|,|\.|\^|%|&|#|\*|@|'
-								u'$|\u20ac'  # dollar and euro
-								ur'|&|+|\-|<|>|=|_|\~|\\|/|\|]')
+                                u'|\u2039|\u203a'  # single angle quotes
+                                u'|\u2018|\u2019'  # single curly quotes
+                                u'|\u201c|\u201d'  # double curly quotes
+                                u'|\u00ab|\u00bb'  # double angle quotes
+                                ur'|`|{|}|\[|\]|:|;|,|\.|\^|%|&|#|\*|@|'
+                                u'$|\u20ac'  # dollar and euro
+                                ur'|&|+|\-|<|>|=|_|\~|\\|/|\|]')
 
 default_punk_mark_expression_plus = (default_punk_mark_expression[:-1] +
-									 ur'|\s'
-									 ur'|\u200b|\u2060]')  # zero-width space, word joiner
+                                     ur'|\s'
+                                     ur'|\u200b|\u2060]')  # zero-width space, word joiner
 
 default_punk_mark_pattern = re.compile(default_punk_mark_expression,
-									   re.I | re.MULTILINE | re.DOTALL | re.UNICODE)
+                                       re.I | re.MULTILINE | re.DOTALL | re.UNICODE)
 
 default_punk_mark_pattern_plus = re.compile(default_punk_mark_expression_plus,
-											re.I | re.MULTILINE | re.DOTALL | re.UNICODE)
+                                            re.I | re.MULTILINE | re.DOTALL | re.UNICODE)
 
 @interface.implementer(IPunctuationMarkExpression)
 def _default_punctuation_mark_expression():
-	return default_punk_mark_expression
+    return default_punk_mark_expression
 
 @interface.implementer(IPunctuationMarkPattern)
 def _default_punctuation_mark_pattern():
-	return default_punk_mark_pattern
+    return default_punk_mark_pattern
 
 @interface.implementer(IPunctuationMarkExpressionPlus)
 def _default_punctuation_mark_expression_plus():
-	return default_punk_mark_expression_plus
+    return default_punk_mark_expression_plus
 
 @interface.implementer(IPunctuationMarkPatternPlus)
 def _default_punctuation_mark_pattern_plus():
-	return default_punk_mark_pattern_plus
+    return default_punk_mark_pattern_plus

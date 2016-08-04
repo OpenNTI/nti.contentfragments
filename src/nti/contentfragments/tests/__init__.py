@@ -15,26 +15,26 @@ import zope.testing.cleanup
 
 class ContentfragmentsTestLayer(ZopeComponentLayer, ConfiguringLayerMixin):
 
-	set_up_packages = ('nti.contentfragments',)
+    set_up_packages = ('nti.contentfragments',)
 
-	@classmethod
-	def setUp(cls):
-		cls.setUpPackages()
+    @classmethod
+    def setUp(cls):
+        cls.setUpPackages()
 
-	@classmethod
-	def tearDown(cls):
-		cls.tearDownPackages()
-		zope.testing.cleanup.cleanUp()
+    @classmethod
+    def tearDown(cls):
+        cls.tearDownPackages()
+        zope.testing.cleanup.cleanUp()
 
-	@classmethod
-	def testSetUp(cls, test=None):
-		pass
+    @classmethod
+    def testSetUp(cls, test=None):
+        pass
 
-	@classmethod
-	def testTearDown(cls):
-		pass
+    @classmethod
+    def testTearDown(cls):
+        pass
 
 import unittest
 
 class ContentfragmentsLayerTest(unittest.TestCase):
-	layer = ContentfragmentsTestLayer
+    layer = ContentfragmentsTestLayer
