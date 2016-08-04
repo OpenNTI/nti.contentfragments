@@ -30,8 +30,8 @@ setup(
     description="NTI ContentFragments",
     url="https://github.com/NextThought/nti.contentfragments",
     long_description=_read('README.rst'),
-    license='Proprietary',
-    keywords='Content fragments',
+    license='Apache',
+    keywords='Content fragments semantic typing interfaces classes sanitize censor',
     classifiers=[
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -41,7 +41,8 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: Implementation :: CPython'
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
     ],
     packages=find_packages('src'),
     package_dir={'': 'src'},
@@ -54,13 +55,11 @@ setup(
         'html5lib[datrie]', # > 0.99999999 install datrie if appropriate for the platform
         'lxml', # we required lxml implementation details, can't use xml.etree.ElementTree, even on PyPy.
         'repoze.lru',
-        'zope.browserresource',
         'zope.component',
         'zope.event',
         'zope.interface',
         'zope.mimetype',
         'zope.security',
-        'zope.vocabularyregistry',
         'zope.cachedescriptors',
         'nti.schema'
     ],
