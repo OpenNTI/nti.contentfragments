@@ -1,6 +1,6 @@
 include .coveragerc
 include .pylintrc
-include CHANGES
+include CHANGES.rst
 include INSTALL
 include LICENSE
 include TODO
