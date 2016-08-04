@@ -9,7 +9,12 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
-import copy_reg
+try:
+	import copy_reg
+except ImportError:
+	# Py3
+	import copyreg as copy_reg
+	unicode = str
 
 from zope import component
 from zope import interface

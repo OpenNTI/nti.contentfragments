@@ -9,7 +9,6 @@ entry_points = {
 }
 
 TESTS_REQUIRE = [
-    'nose2[coverage_plugin]',
     'pyhamcrest',
     'zope.testing',
     'nti.testing'
@@ -19,13 +18,18 @@ import platform
 py_impl = getattr(platform, 'python_implementation', lambda: None)
 IS_PYPY = py_impl() == 'PyPy'
 
+def _read(fname):
+	with codecs.open(fname, encoding='utf-8') as f:
+		return f.read()
+
 setup(
     name='nti.contentfragments',
     version=VERSION,
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI ContentFragments",
-    long_description=codecs.open('README.rst', encoding='utf-8').read(),
+    url="https://github.com/NextThought/nti.contentfragments",
+    long_description=_read('README.rst'),
     license='Proprietary',
     keywords='Content fragments',
     classifiers=[
@@ -38,6 +42,7 @@ setup(
     ],
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    include_package_data=True,
     namespace_packages=['nti'],
     tests_require=TESTS_REQUIRE,
     install_requires=[
@@ -60,9 +65,5 @@ setup(
     extras_require={
         'test': TESTS_REQUIRE,
     },
-    dependency_links=[
-        'git+https://github.com/NextThought/nti.schema.git#egg=nti.schema',
-        'git+https://github.com/NextThought/nti.testing.git#egg=nti.testing',
-    ],
-    entry_points=entry_points
+    entry_points=entry_points,
 )

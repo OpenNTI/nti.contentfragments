@@ -14,7 +14,6 @@ from hamcrest import calling
 from hamcrest import assert_that
 does_not = is_not
 
-from nose.tools import assert_raises
 
 from nti.testing.matchers import validly_provides
 from nti.testing.matchers import verifiably_provides
@@ -92,8 +91,8 @@ class TestMisc(unittest.TestCase):
 
 			s1 = t('safe')
 
-			with assert_raises(AttributeError):
-				s1.__parent__ = 'foo'
+			assert_that(calling(setattr).with_args(s1, '__parent__', 'foo'),
+						raises(AttributeError))
 
 			# If we do sneak one into the dictionary, it doesn't survive pickling
 			try:
