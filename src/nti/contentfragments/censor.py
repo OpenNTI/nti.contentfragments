@@ -21,6 +21,7 @@ logger = __import__('logging').getLogger(__name__)
 
 import re
 import array
+import codecs
 
 from zope import component
 from zope import interface
@@ -46,8 +47,18 @@ from nti.contentfragments.interfaces import CensoredUnicodeContentFragment
 from nti.contentfragments.interfaces import IPunctuationMarkExpressionPlus
 from nti.contentfragments.interfaces import ICensoredUnicodeContentFragment
 
-etree_tostring =  getattr(etree, 'tostring')
+etree_tostring = getattr(etree, 'tostring')
 resource_filename = __import__('pkg_resources').resource_filename
+
+# certain old versions of Python 2 up through at least 2.7.9 can't
+# handle a unicode character as the array.array descriptor. 2.7.12
+# seems to handle it fine, though.
+try:
+    unicode
+except NameError:
+    _ARRAY_CHAR_TYPE = 'u'
+else:
+    _ARRAY_CHAR_TYPE = b'u'
 
 def punkt_re_char(lang='en'):
     return component.getUtility(IPunctuationMarkExpressionPlus, name=lang)
@@ -66,14 +77,14 @@ class SimpleReplacementCensoredContentStrategy(object):
 
     def __init__(self, replacement_char='*'):
         assert len(replacement_char) == 1
-        self._replacement_array = array.array(b'u', replacement_char)
+        self._replacement_array = array.array(_ARRAY_CHAR_TYPE, replacement_char)
 
     def censor_ranges(self, content_fragment, censored_ranges):
         # Since we will be replacing each range with its equal length
         # of content and not shortening, then sorting the ranges doesn't matter
-        content_fragment =  content_fragment.decode('utf-8') \
+        content_fragment = content_fragment.decode('utf-8') \
                             if isinstance(content_fragment, bytes) else content_fragment
-        buf = array.array(b'u', content_fragment)
+        buf = array.array(_ARRAY_CHAR_TYPE, content_fragment)
 
         for start, end in censored_ranges:
             buf[start:end] = self._replacement_array * (end - start)
@@ -102,7 +113,7 @@ class BasicScanner(object):
 
     def scan(self, content_fragment):
         yielded = []  # A simple, inefficient way of making sure we don't send overlapping ranges
-        content_fragment =  content_fragment.decode('utf-8') \
+        content_fragment = content_fragment.decode('utf-8') \
                             if isinstance(content_fragment, bytes) else content_fragment
         content_fragment = content_fragment.lower()
         result = self.do_scan(content_fragment, yielded)
@@ -180,31 +191,32 @@ class PipeLineMatchScanner(BasicScanner):
         for s in self.scanners:
             matched_ranges = s.do_scan(content_fragment, yielded)
             for match_range in matched_ranges:
-                if self.test_range( match_range, yielded ):
+                if self.test_range(match_range, yielded):
                     yield match_range
+
+def _read(fname, rot13):
+    fname = resource_filename(__name__, fname)
+    with open(fname, 'rU') as src:
+        if rot13:
+            words = {codecs.encode(x, 'rot13').strip().lower() for x in src.readlines()}
+        else:
+            words = {x.strip().lower() for x in src.readlines()}
+    return frozenset(words)
+
+_white_words = _read('white_list.txt', False)
+_prohibited_words = _read('prohibited_words.txt', True)
+_profane_words = _read('profanity_list.txt', True)
 
 @interface.implementer(ICensoredContentScanner)
 def _word_profanity_scanner():
     """
     External files are stored in rot13.
     """
-    white_words_path = resource_filename(__name__, 'white_list.txt')
-    prohibited_words_path = resource_filename(__name__, 'prohibited_words.txt')
-
-    with open(white_words_path, 'rU') as src:
-        white_words = {x.strip().lower() for x in src.readlines()}
-
-    with open(prohibited_words_path, 'rU') as src:
-        prohibited_words = {x.encode('rot13').strip().lower() for x in src.readlines()}
-
-    return WordMatchScanner(white_words, prohibited_words)
+    return WordMatchScanner(_white_words, _prohibited_words)
 
 @interface.implementer(ICensoredContentScanner)
 def _word_plus_trivial_profanity_scanner():
-    profanity_list_path = resource_filename(__name__, 'profanity_list.txt')
-    with open(profanity_list_path, 'rU') as src:
-        profanity_list = {x.encode('rot13').strip().lower() for x in src.readlines()}
-    return PipeLineMatchScanner([_word_profanity_scanner(), TrivialMatchScanner(profanity_list)])
+    return PipeLineMatchScanner([_word_profanity_scanner(), TrivialMatchScanner(_profane_words)])
 
 @interface.implementer(ICensoredContentPolicy)
 class DefaultCensoredContentPolicy(object):
@@ -250,7 +262,7 @@ class DefaultCensoredContentPolicy(object):
             # be sure to return the best interface
             result = _get_censored_fragment(fragment, docstr,
                                             CensoredHTMLContentFragment)
-        except (StandardError, Exception):
+        except Exception:
             result = self.censor_text(fragment, target)
         return result
 
@@ -288,8 +300,8 @@ def censor_before_text_assigned(fragment, target, event):
     # Does somebody want to censor assigning values of fragments' type to objects of
     # target's type to the field named event.name?
     policy = component.queryMultiAdapter((fragment, target),
-                                          ICensoredContentPolicy,
-                                          name=event.name)
+                                         ICensoredContentPolicy,
+                                         name=event.name)
     if policy is not None:
         censored_fragment = policy.censor(fragment, target)
         if censored_fragment is not fragment and censored_fragment != fragment:

@@ -7,6 +7,14 @@ __docformat__ = "restructuredtext en"
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
+import codecs
+
+try:
+	unicode
+except NameError:
+	# py3
+	unicode = str
+
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import assert_that
@@ -30,13 +38,13 @@ class TestCensor(ContentfragmentsLayerTest):
         scanner = component.getUtility(frag_interfaces.ICensoredContentScanner)
         strat = component.getUtility(frag_interfaces.ICensoredContentStrategy)
 
-        bad_val = 'Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq'.encode('rot13')
+        bad_val = codecs.encode('Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('This is ******* stupid, you ************ *******'))
 
         # One word. We seem to have some variation
-        assert_that( strat.censor_ranges('crap', scanner.scan('crap')),
-                     is_('****'))
+        assert_that(strat.censor_ranges('crap', scanner.scan('crap')),
+                    is_('****'))
 
         # Per trello #3251, the webapp sometimes sends in a bunch of junk
         # data at the beginning of the string. Test that we censor and strip
@@ -45,35 +53,35 @@ class TestCensor(ContentfragmentsLayerTest):
         # unicode punctuation characters as delimiters, namely angle quotes,
         # and it also tests that we correctly normalize to unicode given incoming
         # bytes
-        web_data = b"\xc3\xa2\xe2\x82\xac\xe2\x80\xb9" + bytes(b"fuvg".decode(b'rot13'))
-        assert_that( strat.censor_ranges(web_data, scanner.scan(web_data)),
-                     is_(u'\xe2\u20ac\u2039****'))
+        web_data = b"\xc3\xa2\xe2\x82\xac\xe2\x80\xb9" + codecs.encode("fuvg", 'rot13').encode('utf-8')
+        assert_that(strat.censor_ranges(web_data, scanner.scan(web_data)),
+                    is_(u'\xe2\u20ac\u2039****'))
 
         # zero-width space is recognized
-        assert_that( strat.censor_ranges(u'\u200bcrap', scanner.scan(u'\u200bcrap')),
-                     is_(u'\u200b****'))
+        assert_that(strat.censor_ranges(u'\u200bcrap', scanner.scan(u'\u200bcrap')),
+                    is_(u'\u200b****'))
 
 
     def test_mike_words(self):
         scanner = component.getUtility(frag_interfaces.ICensoredContentScanner)
         strat = component.getUtility(frag_interfaces.ICensoredContentStrategy)
 
-        bad_val = 'ubefrfuvg'.encode('rot13')
+        bad_val = codecs.encode('ubefrfuvg', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('*********'))
 
-        bad_val = 'ohyyfuvg'.encode('rot13')
+        bad_val = codecs.encode('ohyyfuvg','rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('********'))
 
-        bad_val = 'nffbpvngrq cerff'.encode('rot13')
+        bad_val = codecs.encode('nffbpvngrq cerff', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_('associated press'))
 
     def test_greg_words(self):
         scanner = component.getUtility(frag_interfaces.ICensoredContentScanner)
         strat = component.getUtility(frag_interfaces.ICensoredContentStrategy)
-        bad_val = 'fuvgont'.encode('rot13')
+        bad_val = codecs.encode('fuvgont', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                     is_not(bad_val))
 
@@ -121,7 +129,7 @@ class TestCensor(ContentfragmentsLayerTest):
     def test_pipeline_scanner(self):
         profanity_file = resource_filename(__name__, '../profanity_list.txt')
         with open(profanity_file, 'rU') as f:
-            profanity_list = {x.encode('rot13').strip() for x in f.readlines()}
+            profanity_list = {codecs.encode(x, 'rot13').strip() for x in f.readlines()}
 
         scanners = []
         scanners.append(frag_censor.WordMatchScanner((), ('stupid',)))
@@ -130,11 +138,11 @@ class TestCensor(ContentfragmentsLayerTest):
 
         strat = frag_censor.SimpleReplacementCensoredContentStrategy()
 
-        bad_val = 'Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq'.encode('rot13')
+        bad_val = codecs.encode('Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                      is_('This is ******* ******, you ************ *******'))
 
-        bad_val = 'ohggre pbafgvghgvba pbzchgngvba'.encode('rot13')
+        bad_val = codecs.encode('ohggre pbafgvghgvba pbzchgngvba', 'rot13')
         assert_that(strat.censor_ranges(bad_val, scanner.scan(bad_val)),
                      is_('butter constitution computation'))
 
@@ -142,7 +150,7 @@ class TestCensor(ContentfragmentsLayerTest):
         policy = frag_censor.DefaultCensoredContentPolicy()
         template = '<html><head/><body><b>%s</b></body></html>'
         for w in ('shpx', 'penc'):
-            bad_val = template % w.encode('rot13')
+            bad_val = template % codecs.encode(w, 'rot13')
             bad_val = frag_interfaces.HTMLContentFragment(bad_val)
             assert_that(policy.censor(bad_val, None),
                         is_('<html><head/><body><b>****</b></body></html>'))
@@ -156,14 +164,14 @@ class TestCensor(ContentfragmentsLayerTest):
         class Censored(object):
             body = FieldPropertyStoredThroughField(ICensored['body'])
 
-        component.provideAdapter( frag_censor.DefaultCensoredContentPolicy,
-                                  adapts=(unicode, ICensored),
-                                  provides=frag_interfaces.ICensoredContentPolicy,
-                                  name=Censored.body.field.__name__)
+        component.provideAdapter(frag_censor.DefaultCensoredContentPolicy,
+                                 adapts=(unicode, ICensored),
+                                 provides=frag_interfaces.ICensoredContentPolicy,
+                                 name=Censored.body.field.__name__)
 
         censored = Censored()
 
-        bad_val = 'Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq'.encode('rot13')
+        bad_val = codecs.encode('Guvf vf shpxvat fghcvq, lbh ZbgureShpxre onfgneq', 'rot13')
         bad_val = frag_interfaces.UnicodeContentFragment(bad_val)
 
         censored.body = bad_val

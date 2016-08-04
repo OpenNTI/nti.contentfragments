@@ -2,8 +2,8 @@ language: python
 sudo: false
 python:
   - 2.7
-#  - 3.4
-#  - 3.5
+  - 3.4
+  - 3.5
 # PyPy disabled because Travis has a really old version that crashes
 # with lxml. We could do what gevent, etc, do and upgrade it ourself...
 #  - pypy

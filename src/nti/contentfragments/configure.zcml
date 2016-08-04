@@ -46,22 +46,17 @@
     </configure>
 
     <!-- Event assignment dispatching. Used in censoring. -->
-    <!-- browser:resourceDirectory directive, used by plone.i18n -->
-    <include package="zope.browserresource" file="meta.zcml" />
 
-    <include package="plone.i18n" />
-    <include package="zope.vocabularyregistry" />
-    
     <!-- Make sure censoring works -->
     <include package="nti.schema" />
-        
+
     <!-- Content fragment transformation adapters -->
     <adapter factory=".latex.PlainTextToLatexFragmentConverter"
              for=".interfaces.IPlainTextContentFragment"
              provides=".interfaces.ILatexContentFragment" />
 
     <adapter factory=".latex.PlainTextToLatexFragmentConverter"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              provides=".interfaces.ILatexContentFragment" />
 
     <!--
@@ -69,7 +64,7 @@
     TODO: Is this right?
     -->
     <adapter factory=".interfaces.HTMLContentFragment"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              provides=".interfaces.IHTMLContentFragment" />
 
     <!--
@@ -77,11 +72,11 @@
     This will either create a plain text or HTML fragment.
     -->
     <adapter factory=".html.sanitize_user_html"
-             for="dolmen.builtins.IString"
+             for=".interfaces.IString"
              provides=".interfaces.IUnicodeContentFragment" />
 
     <adapter factory=".html.sanitize_user_html"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              provides=".interfaces.IUnicodeContentFragment" />
 
     <!-- This is something of a lie. It might sanitize to plain text -->
@@ -94,7 +89,7 @@
         answer that
     -->
     <adapter factory=".html._sanitize_user_html_to_text"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              provides=".interfaces.IPlainTextContentFragment" />
 
     <!--
@@ -103,16 +98,16 @@
         however.
     -->
     <adapter factory=".html.sanitize_user_html"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              provides=".interfaces.ISanitizedHTMLContentFragment" />
 
     <adapter factory=".html._sanitize_user_html_to_text"
-             for="dolmen.builtins.IString"
+             for=".interfaces.IString"
              name="text"
              provides=".interfaces.IPlainTextContentFragment" />
 
     <adapter factory=".html._sanitize_user_html_to_text"
-             for="dolmen.builtins.IUnicode"
+             for=".interfaces.IUnicode"
              name="text"
              provides=".interfaces.IPlainTextContentFragment" />
 
@@ -152,7 +147,7 @@
          unicode.
     -->
     <subscriber handler=".censor.censor_before_text_assigned"
-                for="dolmen.builtins.IUnicode * nti.schema.interfaces.IBeforeTextAssignedEvent" />
+                for=".interfaces.IUnicode * nti.schema.interfaces.IBeforeTextAssignedEvent" />
 
     <utility factory=".latex._DefaultTextLatexEscaper" />
     <utility factory=".urlmatcher.GrubberHyperlinkFormatter" />
@@ -170,9 +165,9 @@
     <utility factory=".punctuation._default_punctuation_mark_expression" name="en" />
     <utility factory=".punctuation._default_punctuation_mark_expression" name="es" />
     <utility factory=".punctuation._default_punctuation_mark_expression" name="ru" />
-    
+
     <utility factory=".punctuation._default_punctuation_mark_expression_plus" name="en" />
     <utility factory=".punctuation._default_punctuation_mark_expression_plus" name="es" />
     <utility factory=".punctuation._default_punctuation_mark_expression_plus" name="ru" />
-    
+
 </configure>
