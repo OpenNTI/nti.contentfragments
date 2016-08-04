@@ -4,17 +4,19 @@
 .. $Id: interfaces.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
 try:
 	import copy_reg
+	PY2 = True
 except ImportError:
 	# Py3
 	import copyreg as copy_reg
 	unicode = str
+	PY2 = False
 
 from zope import component
 from zope import interface
@@ -89,9 +91,9 @@ class UnicodeContentFragment(unicode):
 		raise AttributeError(name, type(self))
 
 	def __getattribute__(self, name):
-		if name in (b'__dict__', b'__weakref__'):  # Though this does not actually prevent creating a weak ref
+		if name in ('__dict__', '__weakref__'):  # Though this does not actually prevent creating a weak ref
 			raise AttributeError(name, type(self))
-		if name == b'__class__':
+		if name == '__class__':
 			return type(self)
 		return unicode.__getattribute__(self, name)
 
@@ -110,7 +112,7 @@ class UnicodeContentFragment(unicode):
 	def __getstate__(self):
 		# Support just the ZCA attributes
 		try:
-			state = unicode.__getattribute__(self, b'__dict__')
+			state = unicode.__getattribute__(self, '__dict__')
 		except AttributeError:
 			# Hmm, really is a slot
 			try:
@@ -133,13 +135,22 @@ class UnicodeContentFragment(unicode):
 				 None,
 				 None)
 
-	def __unicode__(self):
-		""""
-		We are-a unicode instance, but if we don't override this method,
-		calling unicode(UnicodeContentFragment('')) produces a plain, base,
-		unicode object, thus losing all our interfaces.
-		"""
-		return self
+	if PY2:
+		def __unicode__(self):
+			""""
+			We are-a unicode instance, but if we don't override this method,
+			calling unicode(UnicodeContentFragment('')) produces a plain, base,
+			unicode object, thus losing all our interfaces.
+			"""
+			return self
+	else:
+		def __str__(self):
+			return self
+
+		def __getslice__(self, i, j):
+			# Part of IReadSequence, deprecated in 2.0, removed in 3,
+			# but we still must implement it to comply with the iface.
+			raise NotImplementedError()
 
 	def __rmul__(self, times):
 		result = unicode.__rmul__(self, times)

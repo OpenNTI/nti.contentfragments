@@ -20,7 +20,10 @@ from nti.testing.matchers import verifiably_provides
 
 import unittest
 import mimetypes
-import cPickle as pickle
+try:
+	import cPickle as pickle
+except ImportError:
+	import pickle
 
 from zope import interface
 
@@ -33,6 +36,11 @@ from nti.contentfragments.interfaces import IPlainTextContentFragment
 from nti.contentfragments.interfaces import SanitizedHTMLContentFragment
 
 from nti.contentfragments.schema import PlainTextLine
+
+try:
+	unicode
+except NameError:
+	unicode = str
 
 class ITest(interface.Interface):
 	pass
