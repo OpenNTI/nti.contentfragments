@@ -1,0 +1,14 @@
+include .coveragerc
+include .pylintrc
+include CHANGES
+include INSTALL
+include LICENSE
+include TODO
+include babel.cfg
+include nose2.cfg
+include tox.ini
+recursive-include src *.csv
+recursive-include src *.plist
+recursive-include src *.txt
+recursive-include src *.types
+recursive-include src *.zcml
