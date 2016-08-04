@@ -240,7 +240,8 @@ class _SanitizerFilter(sanitizer.Filter):
 
         if self._ignoring_stack:
             # element data beneath something we're rejecting
-            return None
+            # XXX: JAM: I can't get this condition to happen in tests!
+            return None # pragma: no cover
 
         # Otherwise, don't escape the tag, simply drop the tag name, but
         # preserve the contents.
@@ -343,12 +344,11 @@ def sanitize_user_html(user_input, method='html'):
         # for user-provided images might be preferable.
         elif node.tag == 'img':
             node.attrib.pop('max-width', None)
-            style = node.attrib.get('style')
-            if style and 'max-width' in style:
-                new_style = [x for x in style.split(';') if 'max-width' not in x]
-                style = ';'.join(new_style)
-            style = style or ''
-            node.attrib['style'] = '%s;%s;' % (style, 'max-width: 100%')
+            style = node.attrib.get('style') or ''
+            # max-width is not in our allowed list of styles
+            assert 'max-width' not in style
+            new_style = style + (' ' if style else '') + 'max-width: 100%;'
+            node.attrib['style'] = new_style
 
     if method == 'text':
         return _doc_to_plain_text(doc)

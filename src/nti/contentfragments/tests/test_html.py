@@ -9,6 +9,7 @@ __docformat__ = "restructuredtext en"
 
 from hamcrest import is_
 from hamcrest import assert_that
+from hamcrest import same_instance
 
 from nti.testing.matchers import verifiably_provides
 
@@ -18,6 +19,7 @@ import plistlib
 from nti.contentfragments import interfaces as frg_interfaces
 
 from nti.contentfragments.tests import ContentfragmentsLayerTest
+from nti.contentfragments import html as frag_html
 
 def _check_sanitized(inp, expect, expect_iface=frg_interfaces.IUnicodeContentFragment):
     was = frg_interfaces.IUnicodeContentFragment(inp)
@@ -40,7 +42,7 @@ class TestHTTML(ContentfragmentsLayerTest):
 
         _ = _check_sanitized("<audio data-id='ichigo' />",
                              u'<html><body><audio data-id="ichigo"></audio></body></html>')
-        
+
     def test_normalize_html_text_to_par(self):
         html = u'<html><body><p style=" text-align: left;"><span style="font-family: \'Helvetica\';  font-size: 12pt; color: black;">The pad replies to my note.</span></p>The server edits it.</body></html>'
         exp = u'<html><body><p style="text-align: left;"><span>The pad replies to my note.</span></p><p style="text-align: left;">The server edits it.</p></body></html>'
@@ -107,3 +109,33 @@ class TestHTTML(ContentfragmentsLayerTest):
         exp = u'<html><a href=\'http://tag:nextthought.com,2011-10:julie.zhu-OID-0x148a37:55736572735f315f54657374:hjJe3dfZMVb,"body":["5:::{\\"args\\\'>foo</html>'
         plain_text = frg_interfaces.IPlainTextContentFragment(exp)
         assert_that(plain_text, verifiably_provides(frg_interfaces.IPlainTextContentFragment))
+
+        # idempotent
+        assert_that(frag_html._sanitize_user_html_to_text(plain_text),
+                    is_(same_instance(plain_text)))
+        assert_that(frag_html._html_to_sanitized_text(plain_text),
+                    is_(same_instance(plain_text)))
+
+
+    def test_sanitize_img(self):
+        html = '<html><body><img style="color: blue; text-align: left; max-width: 10px" href="foo"></body></html>'
+        exp = '<html><body><img href="foo" style="color: blue; text-align: left; max-width: 100%;" /></body></html>'
+        _check_sanitized(html, exp)
+
+        html = '<html><body><img style="" href="foo"></body></html>'
+        exp = '<html><body><img href="foo" style="max-width: 100%;" /></body></html>'
+        _check_sanitized(html, exp)
+
+        html = '<html><body><img max-width="1%" href="foo"></body></html>'
+        exp = '<html><body><img href="foo" style="max-width: 100%;" /></body></html>'
+        _check_sanitized(html, exp)
+
+    def test_sanitize_empty_span(self):
+        html = '<html><body><span></span></body></html>'
+        exp = ''
+        _check_sanitized(html, exp)
+
+    def test_sanitize_remove_inner_elems(self):
+        html = '<html><body><script><div /><span>Hi</span></script><style><span>hi</span></style></body></html>'
+        exp = ''
+        _check_sanitized(html, exp)
