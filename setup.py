@@ -1,7 +1,7 @@
 import codecs
 from setuptools import setup, find_packages
 
-VERSION = '0.0.0'
+VERSION = '0.0.0.dev0'
 
 entry_points = {
     'console_scripts': [
@@ -38,6 +38,9 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: CPython'
     ],
     packages=find_packages('src'),
@@ -50,7 +53,6 @@ setup(
         'dolmen.builtins',
         'html5lib[datrie]', # > 0.99999999 install datrie if appropriate for the platform
         'lxml', # we required lxml implementation details, can't use xml.etree.ElementTree, even on PyPy.
-        'plone.i18n < 3.0', # 3.0 adds hards deps on Products.CMFCore and Zope2
         'repoze.lru',
         'zope.browserresource',
         'zope.component',

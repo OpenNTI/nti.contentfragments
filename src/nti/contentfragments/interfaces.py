@@ -48,6 +48,20 @@ def _setup():
     zc_add_files([mime_map_file])
 _setup()
 
+try:
+	from dolmen.builtins import IUnicode, IString
+except (ImportError, NameError):
+    # Py3
+    # We get NameError if it is installed, but still tries to use
+    # `unicode`
+    class IUnicode(interface.Interface):
+        """Marker interface for unicode strings"""
+    interface.classImplements(str, IUnicode)
+
+    class IString(interface.Interface):
+        """Marker interface for byte strings"""
+    interface.classImplements(bytes, IString)
+
 class IContentFragment(interface.Interface):
     """
     Base interface representing different formats that content can

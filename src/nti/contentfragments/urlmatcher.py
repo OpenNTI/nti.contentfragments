@@ -25,6 +25,12 @@ from nti.contentfragments.interfaces import HTMLContentFragment
 from nti.contentfragments.interfaces import IHyperlinkFormatter
 from nti.contentfragments.interfaces import IHTMLContentFragment
 
+try:
+    unicode
+except NameError:
+    # Py3
+    unicode = str
+
 Element = getattr(etree, 'Element')
 etree_tostring = getattr(etree, 'tostring')
 
@@ -114,6 +120,8 @@ class GrubberHyperlinkFormatter(object):
         for node in doc.iter():
             self._link_finder(node)
 
-        docstr = unicode(etree_tostring(doc))
+        docstr = etree_tostring(doc)
+        if isinstance(docstr, bytes):
+            docstr = docstr.decode("utf-8")
         html_fragment = dest_class(docstr)
         return html_fragment

@@ -27,6 +27,13 @@ from html5lib.filters import sanitizer
 
 from repoze.lru import lru_cache
 
+try:
+    basestring
+except NameError:
+    # Py3
+    basestring = str
+    unicode = str
+
 Element = getattr(etree, 'Element')
 etree_tostring = getattr(etree, 'tostring')
 
@@ -177,7 +184,7 @@ class _SanitizerFilter(sanitizer.Filter):
         if len(text_and_links) != 1 or text_and_links[0] != text:
 
             def _unicode(x):
-                return unicode(x, 'utf-8') if isinstance(x, str) else x
+                return unicode(x, 'utf-8') if isinstance(x, bytes) else x
 
             for text_or_link in text_and_links:
                 if isinstance(text_or_link, basestring):
