@@ -120,8 +120,6 @@ class GrubberHyperlinkFormatter(object):
         for node in doc.iter():
             self._link_finder(node)
 
-        docstr = etree_tostring(doc)
-        if isinstance(docstr, bytes):
-            docstr = docstr.decode("utf-8")
+        docstr = etree_tostring(doc, encoding=unicode)
         html_fragment = dest_class(docstr)
         return html_fragment
