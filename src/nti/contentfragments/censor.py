@@ -50,6 +50,16 @@ from nti.contentfragments.interfaces import ICensoredUnicodeContentFragment
 etree_tostring = getattr(etree, 'tostring')
 resource_filename = __import__('pkg_resources').resource_filename
 
+# certain old versions of Python 2 up through at least 2.7.9 can't
+# handle a unicode character as the array.array descriptor. 2.7.12
+# seems to handle it fine, though.
+try:
+    unicode
+except NameError:
+    _ARRAY_CHAR_TYPE = 'u'
+else:
+    _ARRAY_CHAR_TYPE = b'u'
+
 def punkt_re_char(lang='en'):
     return component.getUtility(IPunctuationMarkExpressionPlus, name=lang)
 
@@ -67,14 +77,14 @@ class SimpleReplacementCensoredContentStrategy(object):
 
     def __init__(self, replacement_char='*'):
         assert len(replacement_char) == 1
-        self._replacement_array = array.array('u', replacement_char)
+        self._replacement_array = array.array(_ARRAY_CHAR_TYPE, replacement_char)
 
     def censor_ranges(self, content_fragment, censored_ranges):
         # Since we will be replacing each range with its equal length
         # of content and not shortening, then sorting the ranges doesn't matter
         content_fragment = content_fragment.decode('utf-8') \
                             if isinstance(content_fragment, bytes) else content_fragment
-        buf = array.array('u', content_fragment)
+        buf = array.array(_ARRAY_CHAR_TYPE, content_fragment)
 
         for start, end in censored_ranges:
             buf[start:end] = self._replacement_array * (end - start)
