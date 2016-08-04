@@ -47,6 +47,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     namespace_packages=['nti'],
+    zip_safe=True, # zope.mimetype uses open() though, so we may have to extract files
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
