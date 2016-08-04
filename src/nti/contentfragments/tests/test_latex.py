@@ -16,14 +16,15 @@ from nti.testing.matchers import implements, verifiably_provides
 
 from zope import component
 
-from nti.contentfragments.interfaces import ITextLatexEscaper
-from nti.contentfragments.interfaces import ILatexContentFragment
-from nti.contentfragments.interfaces import PlainTextContentFragment
-from nti.contentfragments.interfaces import IPlainTextContentFragment
+from ..interfaces import ITextLatexEscaper
+from ..interfaces import ILatexContentFragment
+from ..interfaces import PlainTextContentFragment
+from ..interfaces import IPlainTextContentFragment
 
-from nti.contentfragments.latex import PlainTextToLatexFragmentConverter
+from ..latex import PlainTextToLatexFragmentConverter
+from nti.contentfragments import latex as latex_mod
 
-from nti.contentfragments.tests import ContentfragmentsLayerTest
+from . import ContentfragmentsLayerTest
 
 def _tex_convert(val):
     if not IPlainTextContentFragment.providedBy(val):
@@ -41,13 +42,13 @@ class TestLatexTransforms(ContentfragmentsLayerTest):
     def test_escaper(self):
         scaper = component.queryUtility(ITextLatexEscaper)
         assert_that(scaper, is_not(none()))
-        assert_that(scaper(u'\u2026'), is_('\ldots '))
+        assert_that(scaper(u'\u2026'), is_(r'\ldots '))
 
     def test_provides(self):
         assert_that(PlainTextToLatexFragmentConverter,
-                     implements(ILatexContentFragment))
+                    implements(ILatexContentFragment))
         assert_that(PlainTextToLatexFragmentConverter('foo'),
-                     verifiably_provides(ILatexContentFragment))
+                    verifiably_provides(ILatexContentFragment))
 
     def test_trivial_escapes(self):
         assert_that(self._convert('$'), is_('\\$'))
@@ -83,4 +84,16 @@ class TestLatexTransforms(ContentfragmentsLayerTest):
                     'is bounded by $y = x$, $x = 5$ and $y = 1$.')
 
     def test_leading_or_trailing_space(self):
-        _tex_assert(' abc ', is_(' abc '))
+        _tex_assert(' abc ', ' abc ')
+
+    def test_all_space(self):
+        _tex_assert(' ', " ")
+
+    def test_incomplete(self):
+        _tex_assert('+', "+")
+
+    def test_dangling(self):
+        _tex_assert('1 +', "1 +")
+
+    def test_equation_component(self):
+        assert_that(latex_mod.is_equation_component(''), is_(''))
