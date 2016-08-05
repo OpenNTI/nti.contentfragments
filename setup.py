@@ -1,7 +1,7 @@
 import codecs
 from setuptools import setup, find_packages
 
-VERSION = '0.0.0.dev0'
+
 
 entry_points = {
     'console_scripts': [
@@ -22,9 +22,11 @@ def _read(fname):
     with codecs.open(fname, encoding='utf-8') as f:
         return f.read()
 
+version = _read('version.txt')
+
 setup(
     name='nti.contentfragments',
-    version=VERSION,
+    version=version,
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI ContentFragments",

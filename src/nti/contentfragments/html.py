@@ -53,7 +53,7 @@ etree_tostring = getattr(etree, 'tostring')
 # that works similarly but has a less confusing name, plus includes
 # our standard options
 
-class Serializer(serializer.HTMLSerializer):
+class _Serializer(serializer.HTMLSerializer):
 
     # attribute quoting options
     quote_attr_values = 'always'
@@ -265,7 +265,7 @@ def _html5lib_tostring(doc, sanitize=True):
     # outside a browser; this
     # We do not strip whitespace here. In most cases, we want to preserve
     # user added whitespace.
-    s = Serializer(strip_whitespace=False)
+    s = _Serializer(strip_whitespace=False)
 
     # By not passing the 'encoding' arg, we get a unicode string
     output_generator = s.serialize(stream)

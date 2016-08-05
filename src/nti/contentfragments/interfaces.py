@@ -8,7 +8,7 @@ from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
-
+# pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument
 try:
     import copy_reg
     PY2 = True
@@ -398,6 +398,7 @@ class ICensoredContentStrategy(interface.Interface):
     def censor_ranges(content_fragment, censored_ranges):
         """
         Censors the content fragment appropriately and returns the censored value.
+
         :param content_fragment: The fragment being censored.
         :param censored_ranges: The ranges of illicit content as produced by
             :meth:`ICensoredContentScanner.scan`; they are not guaranteed to be in any
@@ -416,6 +417,7 @@ class ICensoredContentPolicy(interface.Interface):
     def censor(content_fragment, context):
         """
         Censors the content fragment appropriately and returns the censored value.
+
         :param content_fragment: The fragment being censored.
         :param context: The object that this content fragment should be censored
             with regard to. For example, the fragment's container or composite
