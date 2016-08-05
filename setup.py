@@ -22,7 +22,7 @@ def _read(fname):
     with codecs.open(fname, encoding='utf-8') as f:
         return f.read()
 
-version = _read('version.txt')
+version = _read('version.txt').strip()
 
 setup(
     name='nti.contentfragments',

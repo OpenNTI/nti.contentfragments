@@ -30,3 +30,5 @@ Other features:
 - Support for making arbitrary incoming HTML safe (sanitizing it).
 - Support for very configurable (optionally) event-based profanity
   censoring that integrates with nti.schema/zope.schema.
+
+See `the documentation <http://nticontentfragments.readthedocs.io/en/latest/>`_ for more details.
