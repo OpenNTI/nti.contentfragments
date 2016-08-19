@@ -60,7 +60,7 @@ setup(
         'zope.component',
         'zope.event',
         'zope.interface',
-        'zope.mimetype',
+        'zope.mimetype >= 2.1.0',
         'zope.security',
         'zope.cachedescriptors',
         'nti.schema'

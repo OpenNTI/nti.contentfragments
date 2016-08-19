@@ -13,15 +13,6 @@ from nti.testing.layers import ConfiguringLayerMixin
 
 import zope.testing.cleanup
 
-try:
-    import zope.mimetype.zcml
-except ImportError as e:
-    # Workaround https://github.com/zopefoundation/zope.mimetype/pull/5
-    assert 'i18n' in e.args[0]
-    from zope.mimetype import i18n
-    import sys
-    sys.modules['i18n'] = i18n
-
 class ContentfragmentsTestLayer(ZopeComponentLayer, ConfiguringLayerMixin):
 
     set_up_packages = ('nti.contentfragments',)
