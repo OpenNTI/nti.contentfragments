@@ -2,13 +2,8 @@
  Changes
 =========
 
-1.1.0
------
-
-- Depend on zope.mimetype >= 2.1.0 for better support of Python 3.
-
-1.0.0
-------
+1.0.0 (Unknown)
+===============
 
 - Add support for Python 3.
 - Stop configuring plone.i18n. It's a big dependency and doesn't work
@@ -18,3 +13,4 @@
 - The word lists used in censoring are cached in memory.
 - :class:`nti.contentfragments.html._Serializer` has been renamed and
   is no longer public.
+- Depend on zope.mimetype >= 2.1.0 for better support of Python 3.

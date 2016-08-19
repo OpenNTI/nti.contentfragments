@@ -12,3 +12,7 @@ recursive-include src *.plist
 recursive-include src *.txt
 recursive-include src *.types
 recursive-include src *.zcml
+include *.txt
+recursive-include doc *.py
+recursive-include doc *.rst
+recursive-include doc Makefile
