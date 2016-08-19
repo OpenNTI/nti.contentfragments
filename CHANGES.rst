@@ -2,8 +2,8 @@
  Changes
 =========
 
-1.0.0 (Unknown)
-===============
+1.0.0 (2016-08-19)
+==================
 
 - Add support for Python 3.
 - Stop configuring plone.i18n. It's a big dependency and doesn't work
