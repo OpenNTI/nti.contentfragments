@@ -2,6 +2,11 @@
  Changes
 =========
 
+1.1.0
+-----
+
+- Depend on zope.mimetype >= 2.1.0 for better support of Python 3.
+
 1.0.0
 ------
 
