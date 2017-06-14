@@ -11,12 +11,9 @@ entry_points = {
 TESTS_REQUIRE = [
     'pyhamcrest',
     'zope.testing',
-    'nti.testing'
+    'nti.testing',
+    'zope.testrunner',
 ]
-
-import platform
-py_impl = getattr(platform, 'python_implementation', lambda: None)
-IS_PYPY = py_impl() == 'PyPy'
 
 def _read(fname):
     with codecs.open(fname, encoding='utf-8') as f:
@@ -41,8 +38,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],

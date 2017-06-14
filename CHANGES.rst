@@ -8,6 +8,8 @@
 - Remove dependency of ``dolmen.builtins``. The interfaces
   ``IUnicode``, ``IBytes`` and ``IString`` are now always defined by this package.
 
+- Add support for Python 3.6.
+
 
 1.0.0 (2016-08-19)
 ==================
