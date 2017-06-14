@@ -2,11 +2,11 @@
  Changes
 =========
 
-1.0.1 (unreleased)
+1.1.0 (unreleased)
 ==================
 
-- Nothing changed yet.
-- remove dolmen.builtins dependency
+- Remove dependency of ``dolmen.builtins``. The interfaces
+  ``IUnicode``, ``IBytes`` and ``IString`` are now always defined by this package.
 
 
 1.0.0 (2016-08-19)
