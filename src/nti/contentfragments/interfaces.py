@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-.. $Id: interfaces.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
+Content-related interfaces.
 """
 
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
-# pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument
+# pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument,abstract-method
 try:
     import copy_reg
     PY2 = True
@@ -34,6 +34,7 @@ mime_types.setup()  # register interface classes and utilities if not already
 
 resource_filename = __import__('pkg_resources').resource_filename
 
+
 def _setup():
     types_data = resource_filename('nti.contentfragments', "types.csv")
     # Hmm. So this registers things in the zope.mimetype.types module
@@ -48,27 +49,36 @@ def _setup():
     zc_add_files([mime_map_file])
 _setup()
 
-try:
-	from dolmen.builtins import IUnicode, IString
-except (ImportError, NameError):
-    # Py3
-    # We get NameError if it is installed, but still tries to use
-    # `unicode` and fails.
-    assert unicode is str
-    class IUnicode(interface.Interface):
-        """Marker interface for unicode strings"""
+
+class IString(interface.Interface):
+    """Marker interface for native strings."""
+
+
+class IUnicode(interface.Interface):
+    """Marker interface for unicode strings."""
+
+
+class IBytes(interface.Interface):
+    """Marker interface for byte strings."""
+
+
+interface.classImplements(str, IString)
+interface.classImplements(bytes, IBytes)
+
+if PY2:
+    interface.classImplements(unicode, IUnicode)
+else:
     interface.classImplements(str, IUnicode)
 
-    class IString(interface.Interface):
-        """Marker interface for byte strings"""
-    interface.classImplements(bytes, IString)
 
 class IContentFragment(interface.Interface):
     """
     Base interface representing different formats that content can
     be in.
     """
-class IUnicodeContentFragment(IContentFragment, sequence.IReadSequence):  # TODO: dolmen.builtins.IUnicode?
+
+
+class IUnicodeContentFragment(IContentFragment, sequence.IReadSequence):
     """
     Content represented as a unicode string.
 
@@ -76,6 +86,8 @@ class IUnicodeContentFragment(IContentFragment, sequence.IReadSequence):  # TODO
     At a minimum, what is required are the `__getitem__` method (and others
     declared by :class:`IReadSequence`), plus the `encode` method.
     """
+    # TODO: extend IUnicode?
+
 
 @interface.implementer(IUnicodeContentFragment)
 class UnicodeContentFragment(unicode):
@@ -142,13 +154,13 @@ class UnicodeContentFragment(unicode):
 
     def __reduce_ex__(self, protocol):
         return (copy_reg.__newobj__,  # Constructor
-                 # Constructor args. Note we pass a real base unicode object;
-                 # otherwise, we get infinite recursion as pickle tries to
-                 # reduce use again using __unicode__
-                 (type(self), self.encode('utf-8').decode('utf-8')),
-                 self.__getstate__() or None,
-                 None,
-                 None)
+                # Constructor args. Note we pass a real base unicode object;
+                # otherwise, we get infinite recursion as pickle tries to
+                # reduce use again using __unicode__
+                (type(self), self.encode('utf-8').decode('utf-8')),
+                self.__getstate__() or None,
+                None,
+                None)
 
     if PY2:
         def __unicode__(self):
@@ -204,21 +216,25 @@ class UnicodeContentFragment(unicode):
     def __setitem__(self, k, v):
         raise TypeError()
 
+
 IContentTypeTextLatex = getattr(mime_types, 'IContentTypeTextLatex')
 class ILatexContentFragment(IUnicodeContentFragment, IContentTypeTextLatex):
     """
     Interface representing content in LaTeX format.
     """
 
+
 @interface.implementer(ILatexContentFragment)
 class LatexContentFragment(UnicodeContentFragment):
     pass
+
 
 IContentTypeTextHtml = getattr(mime_types, 'IContentTypeTextHtml')
 class IHTMLContentFragment(IUnicodeContentFragment, IContentTypeTextHtml):
     """
     Interface representing content in HTML format.
     """
+
 
 # NOTE The implementations of the add methods go directly to
 # unicode and not up the super() chain to avoid as many extra
@@ -231,6 +247,7 @@ def _add_(self, other, tuples):
             result = pair[1](result)
             break
     return result
+
 
 class _AddMixin(object):
     _add_rules = ()
@@ -314,9 +331,10 @@ class ICensoredUnicodeContentFragment(IUnicodeContentFragment):
 class CensoredUnicodeContentFragment(_AddMixin, UnicodeContentFragment):
     pass
 
-CensoredUnicodeContentFragment._add_rules = \
-            ((ICensoredUnicodeContentFragment, CensoredUnicodeContentFragment),
-            (IUnicodeContentFragment, UnicodeContentFragment))
+CensoredUnicodeContentFragment._add_rules = (
+    (ICensoredUnicodeContentFragment, CensoredUnicodeContentFragment),
+    (IUnicodeContentFragment, UnicodeContentFragment)
+)
 
 class ICensoredPlainTextContentFragment(IPlainTextContentFragment, ICensoredUnicodeContentFragment):
     pass
@@ -349,11 +367,12 @@ class CensoredSanitizedHTMLContentFragment(CensoredHTMLContentFragment):
 
 # The rules here place sanitization ahead of censoring, because sanitization
 # can cause security problems for end users; censoring is just offensive
-CensoredSanitizedHTMLContentFragment._add_rules = \
-    (((ICensoredSanitizedHTMLContentFragment, CensoredSanitizedHTMLContentFragment),
+CensoredSanitizedHTMLContentFragment._add_rules = (
+    ((ICensoredSanitizedHTMLContentFragment, CensoredSanitizedHTMLContentFragment),
      (ISanitizedHTMLContentFragment, SanitizedHTMLContentFragment),)
-     + CensoredHTMLContentFragment._add_rules
-     + HTMLContentFragment._add_rules)
+    + CensoredHTMLContentFragment._add_rules
+    + HTMLContentFragment._add_rules
+)
 
 HTMLContentFragment.censored = lambda s, n: CensoredHTMLContentFragment(n)
 UnicodeContentFragment.censored = lambda s, n: CensoredUnicodeContentFragment(n)
