@@ -67,10 +67,6 @@ setup(
     ],
     extras_require={
         'test': TESTS_REQUIRE,
-        ':python_version == "2.7"': [
-            # Not ported to Py3
-            'dolmen.builtins',
-        ],
     },
     entry_points=entry_points,
 )

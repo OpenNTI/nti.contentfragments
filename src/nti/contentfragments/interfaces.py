@@ -18,6 +18,8 @@ except ImportError:
     unicode = str
     PY2 = False
 
+import sys
+
 from zope import component
 from zope import interface
 
@@ -48,13 +50,15 @@ def _setup():
     zc_add_files([mime_map_file])
 _setup()
 
-try:
-	from dolmen.builtins import IUnicode, IString
-except (ImportError, NameError):
-    # Py3
-    # We get NameError if it is installed, but still tries to use
-    # `unicode` and fails.
-    assert unicode is str
+if sys.version_info[0] <= 2:
+    class IString(interface.Interface):
+        """Marker interface for mutable strings."""
+    interface.classImplements(bytes, IString)
+    
+    class IUnicode(interface.Interface):
+        """Marker interface for unicode strings."""
+    interface.classImplements(unicode, IUnicode)
+else:
     class IUnicode(interface.Interface):
         """Marker interface for unicode strings"""
     interface.classImplements(str, IUnicode)

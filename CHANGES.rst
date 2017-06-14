@@ -6,6 +6,7 @@
 ==================
 
 - Nothing changed yet.
+- remove dolmen.builtins dependency
 
 
 1.0.0 (2016-08-19)
