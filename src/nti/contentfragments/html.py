@@ -184,7 +184,7 @@ class _SanitizerFilter(sanitizer.Filter):
         if len(text_and_links) != 1 or text_and_links[0] != text:
 
             def _unicode(x):
-                return unicode(x, 'utf-8') if isinstance(x, bytes) else x
+                return x.decode('utf-8') if isinstance(x, bytes) else x
 
             for text_or_link in text_and_links:
                 if isinstance(text_or_link, basestring):
