@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.1.1 (unreleased)
+1.1.1 (2018-06-29)
 ==================
 
 - Packaging: Do not use ``html5lib[datrie]`` and instead copy that
