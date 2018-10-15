@@ -14,8 +14,10 @@ applying, we would need to do a better job pipelining to avoid copies
 .. $Id: censor.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
+
+# pylint:disable=useless-object-inheritance
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -51,18 +53,9 @@ from .interfaces import ICensoredUnicodeContentFragment
 etree_tostring = getattr(etree, 'tostring')
 resource_string = __import__('pkg_resources').resource_string
 
-# certain old versions of Python 2 up through at least 2.7.9 can't
-# handle a unicode character as the array.array descriptor. 2.7.12
-# seems to handle it fine, though.
-try:
-    unicode
-except NameError:
-    PY2 = False
-    unicode = str
-    _ARRAY_CHAR_TYPE = 'u'
-else:
-    PY2 = True
-    _ARRAY_CHAR_TYPE = b'u'
+PY2 = bytes is str
+_ARRAY_CHAR_TYPE = 'u'
+text_type = str if not PY2 else unicode # pylint:disable=undefined-variable
 
 def punkt_re_char(lang='en'):
     return component.getUtility(IPunctuationMarkExpressionPlus, name=lang)
@@ -81,7 +74,7 @@ def _get_censored_fragment(org_fragment, new_fragment, factory=CensoredUnicodeCo
 @interface.implementer(ICensoredContentStrategy)
 class SimpleReplacementCensoredContentStrategy(object):
 
-    def __init__(self, replacement_char='*'):
+    def __init__(self, replacement_char=u'*'):
         assert len(replacement_char) == 1
         self._replacement_array = array.array(_ARRAY_CHAR_TYPE, replacement_char)
 
@@ -263,7 +256,7 @@ class DefaultCensoredContentPolicy(object):
                         text = self.censor_text(UnicodeContentFragment(text), target)
                         setattr(node, name, text)
 
-            docstr = etree_tostring(doc, encoding=unicode)
+            docstr = etree_tostring(doc, encoding=text_type)
             # be sure to return the best interface
             result = _get_censored_fragment(fragment, docstr,
                                             CensoredHTMLContentFragment)

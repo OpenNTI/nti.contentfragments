@@ -10,14 +10,13 @@ __docformat__ = "restructuredtext en"
 logger = __import__('logging').getLogger(__name__)
 # pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument,abstract-method
 # pylint:disable=useless-object-inheritance
-try:
-    import copy_reg
-    PY2 = True
-except ImportError:
-    # Py3
+PY2 = str is bytes
+if PY2: # pragma: no cover
+    import copy_reg # pylint:disable=import-error
+    text_type = unicode # pylint:disable=undefined-variable
+else:
     import copyreg as copy_reg
-    unicode = str
-    PY2 = False
+    text_type = str
 
 from zope import component
 from zope import interface
@@ -65,11 +64,7 @@ class IBytes(interface.Interface):
 
 interface.classImplements(str, IString)
 interface.classImplements(bytes, IBytes)
-
-if PY2:
-    interface.classImplements(unicode, IUnicode)
-else:
-    interface.classImplements(str, IUnicode)
+interface.classImplements(text_type, IUnicode)
 
 
 class IContentFragment(interface.Interface):
@@ -91,7 +86,7 @@ class IUnicodeContentFragment(IContentFragment, sequence.IReadSequence):
 
 
 @interface.implementer(IUnicodeContentFragment)
-class UnicodeContentFragment(unicode):
+class UnicodeContentFragment(text_type):
     """
     Subclasses should override the :meth:`__add__` method
     to return objects that implement the appropriate (most derived, generally)
@@ -123,7 +118,7 @@ class UnicodeContentFragment(unicode):
             raise AttributeError(name, type(self))
         if name == '__class__':
             return type(self)
-        return unicode.__getattribute__(self, name)
+        return text_type.__getattribute__(self, name)
 
     def __setstate__(self, state):
         # If we had any state saved due to bad pickles in the past
@@ -132,7 +127,7 @@ class UnicodeContentFragment(unicode):
             for k in self.__slots__:
                 v = state.pop(k, self)
                 if v is not self:
-                    unicode.__setattr__(self, k, v)
+                    text_type.__setattr__(self, k, v)
             # Anything left is bad and not supported. __parent__ was extremely common at one point
             if state and (len(state) > 1 or '__parent__' not in state):
                 logger.warning("Ignoring bad state for %s: %s", self, state)
@@ -140,7 +135,7 @@ class UnicodeContentFragment(unicode):
     def __getstate__(self):
         # Support just the ZCA attributes
         try:
-            state = unicode.__getattribute__(self, '__dict__')
+            state = text_type.__getattribute__(self, '__dict__')
         except AttributeError:
             # Hmm, really is a slot
             try:
@@ -163,17 +158,16 @@ class UnicodeContentFragment(unicode):
                 None,
                 None)
 
-    if PY2:
-        def __unicode__(self):
-            """"
-            We are-a unicode instance, but if we don't override this method,
-            calling unicode(UnicodeContentFragment('')) produces a plain, base,
-            unicode object, thus losing all our interfaces.
-            """
-            return self
-    else:
-        def __str__(self):
-            return self
+    def __unicode__(self):
+        """"
+        We are-a unicode instance, but if we don't override this method,
+        calling unicode(UnicodeContentFragment('')) produces a plain, base,
+        unicode object, thus losing all our interfaces.
+        """
+        return self
+
+    if not PY2:
+        __str__ = __unicode__
 
         def __getslice__(self, i, j):
             # Part of IReadSequence, deprecated in 2.0, removed in 3,
@@ -181,31 +175,31 @@ class UnicodeContentFragment(unicode):
             raise NotImplementedError()
 
     def __rmul__(self, times):
-        result = unicode.__rmul__(self, times)
+        result = text_type.__rmul__(self, times)
         if result is not self:
             result = self.__class__(result)
         return result
 
     def __mul__(self, times):
-        result = unicode.__mul__(self, times)
+        result = text_type.__mul__(self, times)
         if result is not self:
             result = self.__class__(result)
         return result
 
     def translate(self, table):
-        result = unicode.translate(self, table)
+        result = text_type.translate(self, table)
         if result is not self:
             result = self.__class__(result)
         return result
 
     def lower(self):
-        result = unicode.lower(self)
+        result = text_type.lower(self)
         if result == self:
             return self  # NOTE this is slightly different than what a normal string does
         return self.__class__(result)
 
     def upper(self):
-        result = unicode.upper(self)
+        result = text_type.upper(self)
         if result == self:
             return self  # NOTE this is slightly different than what a normal string does
         return self.__class__(result)
@@ -242,7 +236,7 @@ class IHTMLContentFragment(IUnicodeContentFragment, IContentTypeTextHtml):
 # copies as possible
 
 def _add_(self, other, tuples):
-    result = unicode.__add__(self, other)
+    result = text_type.__add__(self, other)
     for pair in tuples:
         if pair[0].providedBy(other):
             result = pair[1](result)
