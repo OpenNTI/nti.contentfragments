@@ -194,27 +194,3 @@ class TestMiscConfigured(ContentfragmentsLayerTest):
 
         assert_that(t.fromUnicode(u"HI"), is_(u'hi'))
         assert_that(t.constraint(u"oh hi"), is_false())
-
-class TestTag(unittest.TestCase):
-
-    def test_implements(self):
-        from nti.contentfragments.interfaces import ITagField
-        assert_that(Tag(), verifiably_provides(ITagField))
-
-class TestTitle(unittest.TestCase):
-
-    def test_implements(self):
-        from nti.contentfragments.interfaces import IPlainTextLineField
-        assert_that(Title(), verifiably_provides(IPlainTextLineField))
-
-    def test_schema(self):
-        from nti.schema.jsonschema import JsonSchemafier
-
-        class IFoo(interface.Interface):
-            title = Title()
-
-        schema = JsonSchemafier(IFoo).make_schema()
-        assert_that(schema, has_key('title'))
-
-        assert_that(schema['title'],
-                    has_entries(name=u'title', max_length=140, min_length=0))
