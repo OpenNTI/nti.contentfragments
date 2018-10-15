@@ -6,7 +6,7 @@ An Improved Liberal, Accurate Regex Pattern for Matching URLs
 .. $Id: urlmatcher.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -46,15 +46,15 @@ grubber_v1 = \
 @interface.implementer(IHyperlinkFormatter)
 class GrubberHyperlinkFormatter(object):
 
-    grubber_v1_pattern = re.compile(''.join(grubber_v1))
+    grubber_v1_pattern = re.compile(u''.join(grubber_v1))
 
     def _check_href(self, href):
-        if not href.startswith('http') and not href.startswith('mailto'):
-            href = 'http://' + href
+        if not href.startswith(u'http') and not href.startswith(u'mailto'):
+            href = u'http://' + href
         return href
 
     def _check_text(self, text):
-        if text.startswith('mailto:'):
+        if text.startswith(u'mailto:'):
             text = text[7:]
         return text
 
@@ -80,7 +80,7 @@ class GrubberHyperlinkFormatter(object):
         return result
 
     def _a_builder(self, node, pattern, is_text=True):
-        field = 'text' if is_text else 'tail'
+        field = u'text' if is_text else u'tail'
         text = getattr(node, field, None)
         if text:
             result = self.find_links(text, pattern=pattern)

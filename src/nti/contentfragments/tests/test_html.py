@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals, absolute_import
+from __future__ import print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
 # pylint:disable=line-too-long
@@ -95,8 +95,8 @@ class TestHTTML(ContentfragmentsLayerTest):
         exp = u'<html><body><p style="text-align: left;">The text</p></body></html>'
         _check_sanitized(html, exp, frg_interfaces.ISanitizedHTMLContentFragment)
 
-        html = 'foo<div><br></div><div>http://google.com</div><div><br></div><div>bar</div><div><br></div><div>http://yahoo.com</div>'''
-        exp = '<html><body>foo<br /><a href="http://google.com">http://google.com</a><br />bar<br /><a href="http://yahoo.com">http://yahoo.com</a></body></html>'
+        html = u'foo<div><br></div><div>http://google.com</div><div><br></div><div>bar</div><div><br></div><div>http://yahoo.com</div>'''
+        exp = u'<html><body>foo<br /><a href="http://google.com">http://google.com</a><br />bar<br /><a href="http://yahoo.com">http://yahoo.com</a></body></html>'
         _check_sanitized(html, exp, frg_interfaces.ISanitizedHTMLContentFragment)
 
     def test_pre_allowed(self):

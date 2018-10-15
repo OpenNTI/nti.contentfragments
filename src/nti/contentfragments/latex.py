@@ -6,7 +6,7 @@ Implementations of content fragment transformers for latex.
 .. $Id: latex.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -22,18 +22,18 @@ from nti.contentfragments.interfaces import ILatexContentFragment
 from nti.contentfragments.interfaces import IPlainTextContentFragment
 
 # Map from unicode to tex name
-_TEX_OPERATORS = [('\u00d7', '\\times'),
-                  ('\u2013', '-'),
-                  ('\u2212', '-'),
-                  ('\u2260', '\\neq'),
-                  ('\u00f7', '\\div'),
-                  ('\u2026', '\\ldots '),
-                  ('\u221a', '\\surd'),  # radicand
-                  ('\u2192', '\\rightarrow'),
-                  ('\uf0d0', '\\angle'),
-                  ('\uf044', '\\triangle'),
-                  ('\u2248', '\\approx')]
-_TEX_OPERATOR_MAP = { ord(_k): _v for _k, _v in _TEX_OPERATORS }
+_TEX_OPERATORS = [(u'\u00d7', u'\\times'),
+                  (u'\u2013', u'-'),
+                  (u'\u2212', u'-'),
+                  (u'\u2260', u'\\neq'),
+                  (u'\u00f7', u'\\div'),
+                  (u'\u2026', u'\\ldots '),
+                  (u'\u221a', u'\\surd'),  # radicand
+                  (u'\u2192', u'\\rightarrow'),
+                  (u'\uf0d0', u'\\angle'),
+                  (u'\uf044', u'\\triangle'),
+                  (u'\u2248', u'\\approx')]
+_TEX_OPERATOR_MAP = {ord(_k): _v for _k, _v in _TEX_OPERATORS}
 
 # charmap_extn = {
 #   u'\u20ac'.encode('utf8'): r'\euro ',
@@ -134,18 +134,18 @@ def escape_tex(text, name=u''):
     scaper = _escape_tex if scaper is None else scaper
     return scaper(text)
 
-_PLAIN_BINARY_OPS = ('+', '-', '*', '/', '=', '<', '>', '\u2260')
+_PLAIN_BINARY_OPS = (u'+', u'-', u'*', u'/', u'=', u'<', u'>', u'\u2260')
 _UNICODE_OPS = [_x[0] for _x in _TEX_OPERATORS]
 
-_PLAIN_ACCEPTS = ('(', ')')
+_PLAIN_ACCEPTS = (u'(', u')')
 
-_naturalNumberPattern = re.compile('^[0-9]+[.?,]?$')  # Optional trailing punctuation
-_realNumberPattern = re.compile('^[0-9]*\\.[0-9]*[.?,]?$')  # Optional trailing punctuation
+_naturalNumberPattern = re.compile(u'^[0-9]+[.?,]?$')  # Optional trailing punctuation
+_realNumberPattern = re.compile(u'^[0-9]*\\.[0-9]*[.?,]?$')  # Optional trailing punctuation
 _SIMPLE_ALGEBRA_TERM_PAT = re.compile(r"^[0-9]+\.?[0-9]*[b-zB-Z" + '\u03C0]$')
 _PRE_SIMPLE_ALGEBRA_TERM_PAT = re.compile(r"^[a-zA-Z][0-9]+\.?[0-9]*$")
-_SIMPLE_ALGEBRA_VAR = re.compile('^[a-zA-Z]$')
+_SIMPLE_ALGEBRA_VAR = re.compile(u'^[a-zA-Z]$')
 
-_TRAILING_PUNCT = (',', '.', '?')
+_TRAILING_PUNCT = (u',', u'.', u'?')
 
 def is_equation_component(token):
     if not token:
@@ -154,9 +154,9 @@ def is_equation_component(token):
             # Match '('
             or token in _PLAIN_ACCEPTS
             # Match '(7'
-            or (token.startswith('(') and is_equation_component(token[1:]))
+            or (token.startswith(u'(') and is_equation_component(token[1:]))
             # Match '7)'
-            or (token.endswith(')') and is_equation_component(token[0:-1]))
+            or (token.endswith(u')') and is_equation_component(token[0:-1]))
             or (token[-1] in _TRAILING_PUNCT and is_equation_component(token[0:-1]))
             or token in _UNICODE_OPS
             or _naturalNumberPattern.match(token)
@@ -177,8 +177,8 @@ def cleanup_equation_tokens(tokens):
         punct = tokens[-1][-1]
         tokens = list(tokens)
         tokens[-1] = tokens[-1][0:-1]
-        return ('', tokens, punct)
-    return ('', tokens, '')
+        return (u'', tokens, punct)
+    return (u'', tokens, u'')
 
 @interface.implementer(ILatexContentFragment)
 @component.adapter(IPlainTextContentFragment)
@@ -200,7 +200,7 @@ def PlainTextToLatexFragmentConverter(plain_text, text_scaper=u''):
         return LatexContentFragment(plain_text)
 
     # First, replace some whitespace sensitive tokens
-    plain_text = plain_text.replace('. . .', u'\u2026')  # Ellipsis
+    plain_text = plain_text.replace(u'. . .', u'\u2026')  # Ellipsis
 
     # Then, tokenize on whitespace. If the math is poorly delimited, this
     # will fail
@@ -245,9 +245,9 @@ def PlainTextToLatexFragmentConverter(plain_text, text_scaper=u''):
             end = pointer
             eq_tokens = tokens[beginning:end]
             bef, eq_tokens, aft = cleanup_equation_tokens(eq_tokens)
-            eq = ' '.join(eq_tokens)
+            eq = u' '.join(eq_tokens)
             eq = eq.translate(_TEX_OPERATOR_MAP)
-            eq = bef + '$' + eq + '$' + aft
+            eq = bef + u'$' + eq + u'$' + aft
 
             # Everything before us goes in the accumulator
             accum.extend([escape_tex(x, name=text_scaper) for x in tokens[0:beginning]])
@@ -265,10 +265,10 @@ def PlainTextToLatexFragmentConverter(plain_text, text_scaper=u''):
 
     # SAJ: If the fragment starts or ends with a space, respect that
     if plain_text and plain_text[0].isspace():
-        accum.insert(0, '')
+        accum.insert(0, u'')
 
     if plain_text and plain_text[-1].isspace():
-        accum.append('')
+        accum.append(u'')
 
-    result = LatexContentFragment(' '.join(accum))
+    result = LatexContentFragment(u' '.join(accum))
     return result
