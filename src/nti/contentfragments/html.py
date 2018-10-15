@@ -7,7 +7,7 @@ In particular, sanitazation.
 .. $Id: html.py 92331 2016-07-15 01:55:44Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -195,7 +195,7 @@ class _SanitizerFilter(sanitizer.Filter):
                     start_token = {'type': 'StartTag',
                                    'name': 'a',
                                    'namespace': 'None',
-                                   'data': {(None, 'href'): _unicode(text_or_link.attrib['href'])}}
+                                   'data': {(None, u'href'): _unicode(text_or_link.attrib['href'])}}
                     yield start_token
                     text_token = token.copy()
                     text_token['data'] = _unicode(text_or_link.text)
@@ -284,7 +284,7 @@ def _to_sanitized_doc(user_input):
 
     # Our normalization is pathetic.
     # replace unicode nbsps
-    string = string.replace(u'\u00A0', ' ')
+    string = string.replace(u'\u00A0', u' ')
 
     # Back to lxml to do some dom manipulation
     p = HTMLParser(tree=treebuilders.getTreeBuilder("lxml"),
@@ -317,6 +317,8 @@ def sanitize_user_html(user_input, method='html'):
 
     for node in doc.iter():
         # Turn top-level non-whitespace text nodes into paragraphs.
+        # Note that we get a mix of unicode and str values for 'node.tag'
+        # on Python 2.
         if node.tag == 'p' and node.tail and node.tail.strip():
             tail = node.tail
             node.tail = None
@@ -366,7 +368,7 @@ def sanitize_user_html(user_input, method='html'):
         # 03.2016 - JZ - We no longer want to lstrip.
         string = PlainTextContentFragment(normalized.rstrip())
     else:
-        string = SanitizedHTMLContentFragment("<html><body>" + normalized + "</body></html>")
+        string = SanitizedHTMLContentFragment(u"<html><body>" + normalized + u"</body></html>")
     return string
 
 # Caching these can be quite effective, especially during

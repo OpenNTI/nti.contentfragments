@@ -38,14 +38,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'repoze.sphinx.autointerface',
 ]
-import os
-if not os.path.exists('changelog.rst') and os.path.exists('../CHANGES.rst'):
-    print('Linking ../CHANGES.rst to changelog.rst')
-    if hasattr(os, 'symlink'):
-        os.symlink('../CHANGES.rst', 'changelog.rst')
-    else:
-        import shutil
-        shutil.copyfile('../CHANGES.rst', 'changelog.rst')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -258,21 +250,21 @@ htmlhelp_basename = 'ntisitedoc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-     # The paper size ('letterpaper' or 'a4paper').
-     #
-     # 'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #
+    # 'papersize': 'letterpaper',
 
-     # The font size ('10pt', '11pt' or '12pt').
-     #
-     # 'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #
+    # 'pointsize': '10pt',
 
-     # Additional stuff for the LaTeX preamble.
-     #
-     # 'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #
+    # 'preamble': '',
 
-     # Latex figure (float) alignment
-     #
-     # 'figure_align': 'htbp',
+    # Latex figure (float) alignment
+    #
+    # 'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -361,10 +353,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'https://docs.python.org/': None,
-    'http://zodb.readthedocs.io/en/latest/': None,
-    'http://zopeinterface.readthedocs.io/en/latest/': None,
-    'http://zopecomponent.readthedocs.io/en/latest/': None,
-    #'https://docs.zope.org/zope.site/': None,
+    'https://zodb.readthedocs.io/en/latest/': None,
+    'https://zopeinterface.readthedocs.io/en/latest/': None,
+    'https://zopecomponent.readthedocs.io/en/latest/': None,
+    'https://zopesite.readthedocs.io/en/latest/': None,
 }
 
 extlinks = {'issue': ('https://github.com/NextThought/nti.contentfragments/issues/%s',

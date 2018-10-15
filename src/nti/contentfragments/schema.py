@@ -7,15 +7,18 @@ or :mod:`zope.schema` declarations.
 .. $Id: schema.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
 # pylint: disable=too-many-ancestors
+# pylint:disable=useless-object-inheritance
+
+from zope.interface import implementer
 
 from .interfaces import IContentFragment
-from .interfaces import HTMLContentFragment
+from .interfaces import HTMLContentFragment as HTMLContentFragmentType
 from .interfaces import IHTMLContentFragment
 from .interfaces import LatexContentFragment
 from .interfaces import ILatexContentFragment
@@ -23,8 +26,17 @@ from .interfaces import UnicodeContentFragment
 from .interfaces import IUnicodeContentFragment
 from .interfaces import PlainTextContentFragment
 from .interfaces import IPlainTextContentFragment
-from .interfaces import SanitizedHTMLContentFragment
+from .interfaces import SanitizedHTMLContentFragment as SanitizedHTMLContentFragmentType
 from .interfaces import ISanitizedHTMLContentFragment
+
+from .interfaces import ITextUnicodeContentFragmentField
+from .interfaces import ITextLineUnicodeContentFragmentField
+from .interfaces import ILatexFragmentTextLineField
+from .interfaces import IPlainTextLineField
+from .interfaces import IPlainTextField
+from .interfaces import IHTMLContentFragmentField
+from .interfaces import ISanitizedHTMLContentFragmentField
+from .interfaces import ITagField
 
 from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
@@ -32,8 +44,8 @@ from nti.schema.field import ValidTextLine as TextLine
 
 def _massage_kwargs(self, kwargs):
 
-    assert self._iface.isOrExtends(IUnicodeContentFragment)
-    assert self._iface.implementedBy(self._impl)
+    assert self._iface.isOrExtends(IUnicodeContentFragment), self._iface
+    assert self._iface.implementedBy(self._impl), self._impl
 
     # We're imported too early for ZCA to be configured and we can't automatically
     # adapt.
@@ -51,13 +63,15 @@ class _FromUnicodeMixin(object):
                                                 *args,
                                                 **_massage_kwargs(self, kwargs))
 
-    def fromUnicode(self, string):
+    def fromUnicode(self, value):
         """
         We implement :class:`.IFromUnicode` by adapting the given object
         to our text schema.
         """
-        return super(_FromUnicodeMixin, self).fromUnicode(self.schema(string))
+        return super(_FromUnicodeMixin, self).fromUnicode(self.schema(value))
 
+
+@implementer(ITextUnicodeContentFragmentField)
 class TextUnicodeContentFragment(_FromUnicodeMixin, Object, Text):
     """
     A :class:`zope.schema.Text` type that also requires the object implement
@@ -71,6 +85,7 @@ class TextUnicodeContentFragment(_FromUnicodeMixin, Object, Text):
     _impl = UnicodeContentFragment
 
 
+@implementer(ITextLineUnicodeContentFragmentField)
 class TextLineUnicodeContentFragment(_FromUnicodeMixin, Object, TextLine):
     """
     A :class:`zope.schema.TextLine` type that also requires the object implement
@@ -83,10 +98,11 @@ class TextLineUnicodeContentFragment(_FromUnicodeMixin, Object, TextLine):
     argument will be provided to construct an empty content fragment.
     """
 
-    _iface = IContentFragment
+    _iface = IUnicodeContentFragment
     _impl = UnicodeContentFragment
 
 
+@implementer(ILatexFragmentTextLineField)
 class LatexFragmentTextLine(TextLineUnicodeContentFragment):
     """
     A :class:`~zope.schema.TextLine` that requires content to be in LaTeX format.
@@ -101,6 +117,8 @@ class LatexFragmentTextLine(TextLineUnicodeContentFragment):
     _iface = ILatexContentFragment
     _impl = LatexContentFragment
 
+
+@implementer(IPlainTextLineField)
 class PlainTextLine(TextLineUnicodeContentFragment):
     """
     A :class:`~zope.schema.TextLine` that requires content to be plain text.
@@ -115,6 +133,8 @@ class PlainTextLine(TextLineUnicodeContentFragment):
     _iface = IPlainTextContentFragment
     _impl = PlainTextContentFragment
 
+
+@implementer(IHTMLContentFragmentField)
 class HTMLContentFragment(TextUnicodeContentFragment):
     """
     A :class:`~zope.schema.Text` type that also requires the object implement
@@ -128,8 +148,10 @@ class HTMLContentFragment(TextUnicodeContentFragment):
     """
 
     _iface = IHTMLContentFragment
-    _impl = HTMLContentFragment
+    _impl = HTMLContentFragmentType
 
+
+@implementer(ISanitizedHTMLContentFragmentField)
 class SanitizedHTMLContentFragment(HTMLContentFragment):
     """
     A :class:`Text` type that also requires the object implement
@@ -144,8 +166,10 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
     """
 
     _iface = ISanitizedHTMLContentFragment
-    _impl = SanitizedHTMLContentFragment
+    _impl = SanitizedHTMLContentFragmentType
 
+
+@implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):
     """
     A :class:`zope.schema.Text` that requires content to be plain text.
@@ -160,6 +184,8 @@ class PlainText(TextUnicodeContentFragment):
     _iface = IPlainTextContentFragment
     _impl = PlainTextContentFragment
 
+
+@implementer(ITagField)
 class Tag(PlainTextLine):
     """
     Requires its content to be only one plain text word that is lowercased.
@@ -180,5 +206,5 @@ def Title():
     return PlainTextLine(
         max_length=140,  # twitter
         required=False,
-        title="The human-readable title of this object",
+        title=u"The human-readable title of this object",
         __name__='title')

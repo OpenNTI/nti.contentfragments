@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals, absolute_import
+from __future__ import print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
 # disable: accessing protected members, too many methods
@@ -159,9 +159,9 @@ class TestCensor(ContentfragmentsLayerTest):
         class BadThingParseError(object):
             def lower(self):
                 # But as text, the first thing we do is lower it...
-                return "lower"
+                return u"lower"
             def __iter__(self):
-                return iter('lower')
+                return iter(u'lower')
         text = policy.censor_html(BadThingParseError(), None)
         assert_that(text, is_('lower'))
 
@@ -172,7 +172,7 @@ class TestCensor(ContentfragmentsLayerTest):
     def test_schema_event_censoring(self):
 
         class ICensored(interface.Interface):
-            body = frag_schema.TextUnicodeContentFragment(title="Body")
+            body = frag_schema.TextUnicodeContentFragment(title=u"Body")
 
         @interface.implementer(ICensored)
         class Censored(object):

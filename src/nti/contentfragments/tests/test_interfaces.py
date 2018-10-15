@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals, absolute_import
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
+# pylint:disable=inherit-non-class
 
 from hamcrest import is_
 from hamcrest import is_not
@@ -13,6 +12,8 @@ from hamcrest import raises
 from hamcrest import calling
 from hamcrest import assert_that
 from hamcrest import same_instance
+from hamcrest import has_key
+from hamcrest import has_entries
 does_not = is_not
 
 
@@ -71,13 +72,13 @@ class TestMisc(unittest.TestCase):
         assert_that(s1 + h1, is_('safeunsafe'))
 
         assert_that(s1 * 2, is_(SanitizedHTMLContentFragment),
-                     "Multiplication produces the same types")
+                    "Multiplication produces the same types")
         assert_that(h1 * 2, is_(HTMLContentFragment))
         assert_that(s1 * 2, is_('safesafe'))
         assert_that(h1 * 2, is_('unsafeunsafe'))
 
         assert_that(2 * s1, is_(SanitizedHTMLContentFragment),
-                     "Right multiplication produces the same types")
+                    "Right multiplication produces the same types")
         assert_that(2 * h1, is_(HTMLContentFragment))
         assert_that(2 * s1, is_('safesafe'))
         assert_that(2 * h1, is_('unsafeunsafe'))
@@ -163,26 +164,26 @@ class TestMisc(unittest.TestCase):
     def test_dont_lose_type_on_common_ops(self):
 
         for t in SanitizedHTMLContentFragment, HTMLContentFragment, PlainTextContentFragment:
-            s1 = t('safe')
+            s1 = t(u'safe')
 
-            assert_that(s1.translate({ord('s'): 't'}), is_(t))
-            assert_that(s1.translate({ord('s'): 't'}), is_('tafe'))
+            assert_that(s1.translate({ord('s'): u't'}), is_(t))
+            assert_that(s1.translate({ord('s'): u't'}), is_(u'tafe'))
 
             assert_that(unicode(s1), is_(t))
             assert_that(s1.lower(), is_(t))
             assert_that(s1.upper(), is_(t))
 
     def test_cannot_have_line_breaks_in_text_line(self):
-        ipt = PlainTextContentFragment('This\nis\nnot\nvalid')
+        ipt = PlainTextContentFragment(u'This\nis\nnot\nvalid')
         assert_that(ipt, validly_provides(IPlainTextContentFragment))
 
         assert_that(calling(Title().validate).with_args(ipt),
                     raises(ConstraintNotSatisfied))
 
-class TestMiskConfigured(ContentfragmentsLayerTest):
+class TestMiscConfigured(ContentfragmentsLayerTest):
 
     def test_TextUnicodeContentFragment(self):
-        t = TextUnicodeContentFragment(default='abc')
+        t = TextUnicodeContentFragment(default=u'abc')
         assert_that(t.default, validly_provides(IUnicodeContentFragment))
 
 
@@ -191,5 +192,5 @@ class TestMiskConfigured(ContentfragmentsLayerTest):
     def test_Tag(self):
         t = Tag()
 
-        assert_that(t.fromUnicode("HI"), is_('hi'))
-        assert_that(t.constraint("oh hi"), is_false())
+        assert_that(t.fromUnicode(u"HI"), is_(u'hi'))
+        assert_that(t.constraint(u"oh hi"), is_false())
