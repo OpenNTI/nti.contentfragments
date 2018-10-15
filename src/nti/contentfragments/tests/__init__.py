@@ -4,12 +4,13 @@
 from __future__ import print_function, unicode_literals, absolute_import
 __docformat__ = "restructuredtext en"
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
+# pylint:disable=useless-object-inheritance
 
-from nti.testing.layers import find_test
+from hamcrest import assert_that
+
 from nti.testing.layers import ZopeComponentLayer
 from nti.testing.layers import ConfiguringLayerMixin
+from nti.testing.matchers import verifiably_provides
 
 import zope.testing.cleanup
 
@@ -27,7 +28,7 @@ class ContentfragmentsTestLayer(ZopeComponentLayer, ConfiguringLayerMixin):
         zope.testing.cleanup.cleanUp()
 
     @classmethod
-    def testSetUp(cls, test=None):
+    def testSetUp(cls, test=None): # pylint:disable=arguments-differ
         pass
 
     @classmethod
@@ -38,3 +39,19 @@ import unittest
 
 class ContentfragmentsLayerTest(unittest.TestCase):
     layer = ContentfragmentsTestLayer
+
+
+class FieldTestsMixin(object):
+
+    def _makeOne(self, *args, **kwargs):
+        return self._getTargetClass()(*args, **kwargs)
+
+    def _getTargetClass(self):
+        raise NotImplementedError()
+
+    def _getTargetInterface(self):
+        raise NotImplementedError()
+
+    def test_implements_interface(self):
+        inst = self._makeOne()
+        assert_that(inst, verifiably_provides(self._getTargetInterface()))

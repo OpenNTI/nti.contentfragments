@@ -9,6 +9,7 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 # pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument,abstract-method
+# pylint:disable=useless-object-inheritance
 try:
     import copy_reg
     PY2 = True
@@ -509,3 +510,70 @@ class IPunctuationMarkPatternPlus(interface.Interface):
     marker interface for punctuation + space regular expression pattern
     """
 IPunctuationCharPatternPlus = IPunctuationMarkPatternPlus
+
+## Schema Fields
+
+from zope.schema.interfaces import IObject
+from zope.schema.interfaces import IText
+from zope.schema.interfaces import ITextLine
+
+class ITextUnicodeContentFragmentField(IObject, IText):
+    """
+    A :class:`zope.schema.Text` type that also requires the object implement
+    an interface descending from :class:`~.IUnicodeContentFragment`.
+
+    .. versionadded:: 1.2.0
+    """
+
+class ITextLineUnicodeContentFragmentField(IObject, ITextLine):
+    """
+    A :class:`zope.schema.TextLine` type that also requires the object implement
+    an interface descending from :class:`~.IUnicodeContentFragment`.
+
+    .. versionadded:: 1.2.0
+    """
+
+class ILatexFragmentTextLineField(ITextLineUnicodeContentFragmentField):
+    """
+    A :class:`~zope.schema.TextLine` that requires content to be in LaTeX format.
+
+    .. versionadded:: 1.2.0
+    """
+
+
+class IPlainTextLineField(ITextLineUnicodeContentFragmentField):
+    """
+    A :class:`~zope.schema.TextLine` that requires content to be plain text.
+    """
+
+
+class IHTMLContentFragmentField(ITextUnicodeContentFragmentField):
+    """
+    A :class:`~zope.schema.Text` type that also requires the object implement
+    an interface descending from :class:`.IHTMLContentFragment`.
+
+    .. versionadded:: 1.2.0
+    """
+
+
+class ISanitizedHTMLContentFragmentField(IHTMLContentFragmentField):
+    """
+    A :class:`Text` type that also requires the object implement
+    an interface descending from :class:`.ISanitizedHTMLContentFragment`.
+
+    .. versionadded:: 1.2.0
+    """
+
+class IPlainTextField(ITextUnicodeContentFragmentField):
+    """
+    A :class:`zope.schema.Text` that requires content to be plain text.
+
+    .. versionadded:: 1.2.0
+    """
+
+class ITagField(IPlainTextLineField):
+    """
+    Requires its content to be only one plain text word that is lowercased.
+
+    .. versionadded:: 1.2.0
+    """

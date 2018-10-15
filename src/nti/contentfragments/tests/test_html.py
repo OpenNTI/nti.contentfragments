@@ -4,8 +4,7 @@
 from __future__ import print_function, unicode_literals, absolute_import
 __docformat__ = "restructuredtext en"
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
+# pylint:disable=line-too-long
 
 from hamcrest import is_
 from hamcrest import assert_that
@@ -14,7 +13,10 @@ from hamcrest import same_instance
 from nti.testing.matchers import verifiably_provides
 
 import os
-import plistlib
+try:
+    from plistlib import load as load_plist
+except ImportError:
+    from plistlib import readPlist as load_plist
 
 from nti.contentfragments import interfaces as frg_interfaces
 
@@ -31,8 +33,11 @@ def _check_sanitized(inp, expect, expect_iface=frg_interfaces.IUnicodeContentFra
 class TestHTTML(ContentfragmentsLayerTest):
 
     def test_sanitize_html(self):
-        strings = plistlib.readPlist(os.path.join(os.path.dirname(__file__), 'contenttypes-notes-tosanitize.plist'))
-        sanitized = open(os.path.join(os.path.dirname(__file__), 'contenttypes-notes-sanitized.txt')).readlines()
+        with open(os.path.join(os.path.dirname(__file__), 'contenttypes-notes-tosanitize.plist'), 'rb') as f:
+            strings = load_plist(f)
+        with open(os.path.join(os.path.dirname(__file__), 'contenttypes-notes-sanitized.txt')) as f:
+            sanitized = f.readlines()
+
         for s in zip(strings, sanitized):
             _check_sanitized(s[0], s[1])
 
