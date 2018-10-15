@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.2.0 (unreleased)
+1.2.0 (2018-10-15)
 ==================
 
 - Add support for Python 3.7. Note that ``datrie`` is not yet
