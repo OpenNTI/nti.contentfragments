@@ -2,13 +2,23 @@
  nti.contentfragments
 ======================
 
+.. image:: https://img.shields.io/pypi/v/nti.contentfragments.svg
+        :target: https://pypi.python.org/pypi/nti.contentfragments/
+        :alt: Latest release
+
+.. image:: https://img.shields.io/pypi/pyversions/nti.contentfragments.svg
+        :target: https://pypi.org/project/nti.contentfragments/
+        :alt: Supported Python versions
+
 .. image:: https://travis-ci.org/NextThought/nti.contentfragments.svg?branch=master
-    :target: https://travis-ci.org/NextThought/nti.contentfragments
+        :target: https://travis-ci.org/NextThought/nti.contentfragments
 
-.. image:: https://coveralls.io/repos/github/NextThought/nti.contentfragments/badge.svg?branch=master
-    :target: https://coveralls.io/github/NextThought/nti.contentfragments?branch=master
+.. image:: https://coveralls.io/repos/github/NextThought/nti.contentfragments/badge.svg
+        :target: https://coveralls.io/github/NextThought/nti.contentfragments
 
-
+.. image:: https://readthedocs.org/projects/nticontentfragments/badge/?version=latest
+        :target: https://nticontentfragments.readthedocs.io/en/latest/?badge=latest
+        :alt: Documentation Status
 
 Support for working with string-based content in a Zope3/ZTK
 environment.

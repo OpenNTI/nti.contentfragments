@@ -11,10 +11,8 @@ Contents:
    nti.contentfragments
    changelog
 
-.. automodule:: nti.contentfragments
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. include:: ../README.rst
 
 
 ====================
