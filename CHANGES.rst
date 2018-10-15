@@ -2,10 +2,13 @@
  Changes
 =========
 
-1.1.2 (unreleased)
+1.2.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for Python 3.7. Note that ``datrie`` is not yet
+  available for Python 3.7.
+
+- Add support for PyPy3.
 
 
 1.1.1 (2018-06-29)

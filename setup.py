@@ -39,6 +39,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
@@ -55,24 +56,34 @@ setup(
         'html5lib',
         # we required lxml implementation details, can't use
         # xml.etree.ElementTree, even on PyPy.
-        'lxml',
+        'lxml >= 4.2.5',
         'repoze.lru >= 0.6',
-        'zope.component >= 4.4.1',
-        'zope.event >= 4.3.0',
+        'zope.component >= 4.5.0',
+        'zope.event >= 4.4.0',
         'zope.interface >= 4.5.0',
-        'zope.mimetype >= 2.1.0',
-        'zope.security >= 4.0.3',
+        'zope.mimetype >= 2.3.2',
+        'zope.security >= 4.3.0',
         'zope.cachedescriptors >= 4.3.1',
-        'nti.schema >= 1.3.2'
+        'nti.schema >= 1.12.0',
     ],
     extras_require={
         'test': TESTS_REQUIRE,
+        'docs': [
+            'repoze.sphinx.autointerface',
+            'sphinx_rtd_theme',
+        ],
         # html5lib > 0.99999999 install datrie if appropriate for the platform
         # with its own [datrie] extra. But we do not explicitly depend
         # on that version to help avoid conflicts, and older versions of
         # zc.buildout cannot deal gracefully with missing extras like
         # pip does. See https://github.com/buildout/buildout/issues/457
-        ":platform_python_implementation == 'CPython'": ["datrie"],
+
+        # datrie 0.7.1 does not build on CPython 3.7. See
+        # https://github.com/pytries/datrie/issues/52
+        ":platform_python_implementation == 'CPython' and python_version < '3.7'": [
+            "datrie"
+        ],
+
     },
     entry_points=entry_points,
 )
