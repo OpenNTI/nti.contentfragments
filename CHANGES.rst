@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.2.1 (unreleased)
+1.2.1 (2019-11-07)
 ==================
 
 - Remove a word from the censored word list. See issue #22.
