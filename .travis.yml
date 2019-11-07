@@ -10,6 +10,10 @@ jobs:
       - python: 3.7
         dist: xenial
         sudo: true
+  allow_failures:
+    # pypy3 7.1 is triggering failures
+    # https://bitbucket.org/pypy/pypy/issues/3006/codecsdecode-failure-hex-decoder-returned
+    - python: pypy3
 script:
   - coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress
 after_success:
