@@ -5,7 +5,7 @@
 1.2.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Remove a word from the censored word list. See issue #22.
 
 
 1.2.0 (2018-10-15)
