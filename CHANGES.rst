@@ -2,16 +2,31 @@
  Changes
 =========
 
-1.2.2 (unreleased)
+1.3.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for Python 3.8.
 
+- Depend on zope.interface 5.0.
+
+- Update the datrie dependency. See https://github.com/NextThought/nti.contentfragments/issues/24
+
+- Make ``IUnicodeContentFragment`` extend
+  ``zope.interface.common.collections.ISequence`` instead of the
+  semi-deprecated ``zope.interface.common.sequence.IReadSequence``.
+
+- Replace custom interfaces ``IString``, ``IUnicode`` and ``IBytes``
+  with aliases for ``INativeString``, ``ITextString`` and
+  ``IByteString`` from ``zope.interface.common.builtins``. These
+  custom aliases are now deprecated. See https://github.com/NextThought/nti.contentfragments/issues/23.
+
+- Fix unicode normalization breaking schema fields with zope.schema
+  6.0. See https://github.com/NextThought/nti.contentfragments/issues/26
 
 1.2.1 (2019-11-07)
 ==================
 
-- Remove a word from the censored word list. See issue #22.
+- Remove a word from the censored word list. See issue https://github.com/NextThought/nti.contentfragments/issues/22.
 
 
 1.2.0 (2018-10-15)

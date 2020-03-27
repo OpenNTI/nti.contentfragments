@@ -12,8 +12,6 @@ from hamcrest import raises
 from hamcrest import calling
 from hamcrest import assert_that
 from hamcrest import same_instance
-from hamcrest import has_key
-from hamcrest import has_entries
 does_not = is_not
 
 
@@ -41,9 +39,6 @@ from ..interfaces import IPlainTextContentFragment
 from ..interfaces import SanitizedHTMLContentFragment
 from ..interfaces import IUnicodeContentFragment
 
-from nti.contentfragments.schema import Title
-from nti.contentfragments.schema import Tag
-from nti.contentfragments.schema import TextUnicodeContentFragment
 
 try:
     unicode
@@ -174,23 +169,9 @@ class TestMisc(unittest.TestCase):
             assert_that(s1.upper(), is_(t))
 
     def test_cannot_have_line_breaks_in_text_line(self):
+        from nti.contentfragments.schema import Title
         ipt = PlainTextContentFragment(u'This\nis\nnot\nvalid')
         assert_that(ipt, validly_provides(IPlainTextContentFragment))
 
         assert_that(calling(Title().validate).with_args(ipt),
                     raises(ConstraintNotSatisfied))
-
-class TestMiscConfigured(ContentfragmentsLayerTest):
-
-    def test_TextUnicodeContentFragment(self):
-        t = TextUnicodeContentFragment(default=u'abc')
-        assert_that(t.default, validly_provides(IUnicodeContentFragment))
-
-
-        assert_that(t.fromUnicode(t.default), is_(t.default))
-
-    def test_Tag(self):
-        t = Tag()
-
-        assert_that(t.fromUnicode(u"HI"), is_(u'hi'))
-        assert_that(t.constraint(u"oh hi"), is_false())
