@@ -1,15 +1,15 @@
 language: python
-sudo: false
 python:
   - 2.7
   - 3.6
+  - 3.7
+  - 3.8
   - pypy
   - pypy3
+env:
+  global:
+    ZOPE_INTERFACE_STRICT_IRO: 1
 jobs:
-  include:
-      - python: 3.7
-        dist: xenial
-        sudo: true
   allow_failures:
     # pypy3 7.1 is triggering failures
     # https://bitbucket.org/pypy/pypy/issues/3006/codecsdecode-failure-hex-decoder-returned
