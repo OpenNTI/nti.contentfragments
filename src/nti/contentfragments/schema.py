@@ -15,9 +15,10 @@ logger = __import__('logging').getLogger(__name__)
 # pylint: disable=too-many-ancestors
 # pylint:disable=useless-object-inheritance
 
+import unicodedata
+
 from zope.interface import implementer
 
-from .interfaces import IContentFragment
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
 from .interfaces import IHTMLContentFragment
 from .interfaces import LatexContentFragment
@@ -42,33 +43,57 @@ from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
 from nti.schema.field import ValidTextLine as TextLine
 
-def _massage_kwargs(self, kwargs):
-
-    assert self._iface.isOrExtends(IUnicodeContentFragment), self._iface
-    assert self._iface.implementedBy(self._impl), self._impl
-
-    # We're imported too early for ZCA to be configured and we can't automatically
-    # adapt.
-    if 'default' in kwargs and not self._iface.providedBy(kwargs['default']):
-        kwargs['default'] = self._impl(kwargs['default'])
-    if 'default' not in kwargs and 'defaultFactory' not in kwargs and not kwargs.get('min_length'):  # 0/None
-        kwargs['defaultFactory'] = self._impl
-    return kwargs
-
 class _FromUnicodeMixin(object):
 
+    # Set the interface to use as self.schema. This will be implemented by
+    # objects returned from ``fromUnicode``. However...
+    _iface = None
+    # If the adapter registered to produce _iface may produce some
+    # interface less restrictive than that (e.g., _iface is HTML, but
+    # we can produce plain text)
+    # set this to become self.schema.
+    _iface_upper_bound = None
+    # This is the class used to copy defaults.
+    _impl = lambda *args: None
 
     def __init__(self, *args, **kwargs):
-        super(_FromUnicodeMixin, self).__init__(self._iface,
-                                                *args,
-                                                **_massage_kwargs(self, kwargs))
+        super(_FromUnicodeMixin, self).__init__(
+            self._iface_upper_bound or self._iface, # Becomes self.schema.
+            *args,
+            **self.__massage_kwargs(kwargs))
+
+    def __massage_kwargs(self, kwargs):
+
+        assert self._iface.isOrExtends(IUnicodeContentFragment), self._iface
+        assert self._iface.implementedBy(self._impl), self._impl
+
+        # We're imported too early for ZCA to be configured and we can't automatically
+        # adapt.
+        if 'default' in kwargs and not self._iface.providedBy(kwargs['default']):
+            kwargs['default'] = self._impl(kwargs['default'])
+        if 'default' not in kwargs and 'defaultFactory' not in kwargs and not kwargs.get('min_length'):  # 0/None
+            kwargs['defaultFactory'] = self._impl
+        # Disable unicode normalization at this level; we need to handle it
+        # to properly deal with our content fragment subclasses.
+        assert 'unicode_normalization' not in kwargs
+        kwargs['unicode_normalization'] = None
+        return kwargs
 
     def fromUnicode(self, value):
         """
         We implement :class:`.IFromUnicode` by adapting the given object
         to our text schema.
+
+        This happens *after* unicode normalization.
         """
-        return super(_FromUnicodeMixin, self).fromUnicode(self.schema(value))
+        # unicodedate.normalize does not preserve the class of the
+        # object it's given (it goes back to text_type; always under PyPy, only if
+        # changes are needed under CPython). So we must handle normalization ourself
+        # before converting to the schema.
+        value = unicodedata.normalize(self.__class__.unicode_normalization, value)
+        value = self.schema(value)
+        result = super(_FromUnicodeMixin, self).fromUnicode(value)
+        return result
 
 
 @implementer(ITextUnicodeContentFragmentField)
@@ -156,6 +181,8 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
     """
     A :class:`Text` type that also requires the object implement
     an interface descending from :class:`.ISanitizedHTMLContentFragment`.
+    Note that the default adapter for this can actually produce
+    ``IPlainTextContentFragment`` if there is no HTML present in the input.
 
     Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
     argument for :class:`~zope.schema.Object` is already handled.
@@ -167,7 +194,6 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
 
     _iface = ISanitizedHTMLContentFragment
     _impl = SanitizedHTMLContentFragmentType
-
 
 @implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):

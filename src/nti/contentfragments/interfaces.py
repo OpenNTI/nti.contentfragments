@@ -6,11 +6,13 @@ Content-related interfaces.
 
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
-
+import sys
 logger = __import__('logging').getLogger(__name__)
 # pylint:disable=inherit-non-class,too-many-ancestors,no-self-argument,abstract-method
 # pylint:disable=useless-object-inheritance
 PY2 = str is bytes
+PYPY = hasattr(sys, 'pypy_version_info')
+PYPY2 = PY2 and PYPY
 if PY2: # pragma: no cover
     import copy_reg # pylint:disable=import-error
     text_type = unicode # pylint:disable=undefined-variable
@@ -21,15 +23,14 @@ else:
 from zope import component
 from zope import interface
 
-from zope.interface.common import sequence
+from zope.interface.common.collections import ISequence
+from zope.interface.common.builtins import INativeString
+from zope.interface.common.builtins import IByteString
+from zope.interface.common.builtins import ITextString
 
 from zope.contenttype import add_files as zc_add_files
 
-try:
-    from zope.mimetype import types as mime_types
-except ImportError:  # pragma: no cover
-    # They moved this in zope.mimetype 2.0 (python 3 compat?)
-    from zope.mimetype import mtypes as mime_types
+from zope.mimetype import mtypes as mime_types
 mime_types.setup()  # register interface classes and utilities if not already
 
 resource_filename = __import__('pkg_resources').resource_filename
@@ -49,22 +50,10 @@ def _setup():
     zc_add_files([mime_map_file])
 _setup()
 
-
-class IString(interface.Interface):
-    """Marker interface for native strings."""
-
-
-class IUnicode(interface.Interface):
-    """Marker interface for unicode strings."""
-
-
-class IBytes(interface.Interface):
-    """Marker interface for byte strings."""
-
-
-interface.classImplements(str, IString)
-interface.classImplements(bytes, IBytes)
-interface.classImplements(text_type, IUnicode)
+# BWC aliases. These will be removed in the future.
+IString = INativeString
+IUnicode = ITextString
+IBytes = IByteString
 
 
 class IContentFragment(interface.Interface):
@@ -73,16 +62,27 @@ class IContentFragment(interface.Interface):
     be in.
     """
 
-
-class IUnicodeContentFragment(IContentFragment, sequence.IReadSequence):
+class IUnicodeContentFragment(IContentFragment, ISequence):
     """
     Content represented as a unicode string.
 
     Although it is simplest to subclass :class:`unicode`, that is not required.
     At a minimum, what is required are the `__getitem__` method (and others
     declared by :class:`IReadSequence`), plus the `encode` method.
+
+    .. versionchanged:: 1.3.0
+       Extend ``zope.interface.common.collections.ISequence`` instead of the semi-deprecated
+       ``zope.interface.common.sequence.IReadSequence``. Except on PyPy2, where
+       ``ISequence`` cannot validate against unicode objects.
     """
     # TODO: extend IUnicode?
+
+if PYPY2: # pragma: no cover
+    IUnicodeContentFragment.__bases__ = tuple(
+        x
+        for x in IUnicodeContentFragment.__bases__
+        if x is not ISequence
+    )
 
 
 @interface.implementer(IUnicodeContentFragment)
