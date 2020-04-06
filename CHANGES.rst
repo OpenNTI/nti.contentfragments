@@ -23,6 +23,8 @@
 - Fix unicode normalization breaking schema fields with zope.schema
   6.0. See https://github.com/NextThought/nti.contentfragments/issues/26
 
+- Ensure all objects have consistent resolution orders.
+
 1.2.1 (2019-11-07)
 ==================
 
