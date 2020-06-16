@@ -144,3 +144,13 @@ class TestHTTML(ContentfragmentsLayerTest):
         html = '<html><body><script><div /><span>Hi</span></script><style><span>hi</span></style></body></html>'
         exp = ''
         _check_sanitized(html, exp)
+
+    def test_preserve_data_nti(self):
+        attrs_to_test = ["data-nti-entity-type",
+                         "data-nti-entity-mutability",
+                         "data-nti-entity-id",
+                         "data-nti-entity-username"]
+
+        for attr in attrs_to_test:
+            html = '<html><body><p><a %s="my_value">Josh Zuech</a></p></body></html>' % attr
+            _check_sanitized(html, html)

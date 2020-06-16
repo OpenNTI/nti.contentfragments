@@ -142,7 +142,11 @@ class _SanitizerFilter(sanitizer.Filter):
             'href',
             'src',
             'style',
-            'xml:lang'
+            'xml:lang',
+            'data-nti-entity-type',
+            'data-nti-entity-mutability',
+            'data-nti-entity-id',
+            'data-nti-entity-username',
         ])
         self.allowed_attributes = frozenset(((None, attr) for attr in allowed_attributes))
 
