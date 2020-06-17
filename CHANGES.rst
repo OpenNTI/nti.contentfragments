@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.4.0 (unreleased)
+1.4.0 (2020-06-17)
 ==================
 
 - Allow ``IAllowedAttributeProvider`` to be registered to provide
