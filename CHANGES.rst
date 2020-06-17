@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.3.1 (unreleased)
+1.4.0 (unreleased)
 ==================
 
 - Allow ``IAllowedAttributeProvider`` to be registered to provide
