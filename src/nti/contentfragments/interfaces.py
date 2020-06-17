@@ -31,6 +31,11 @@ from zope.interface.common.builtins import ITextString
 from zope.contenttype import add_files as zc_add_files
 
 from zope.mimetype import mtypes as mime_types
+
+from zope.schema import NativeStringLine
+
+from nti.schema.field import IndexedIterable
+
 mime_types.setup()  # register interface classes and utilities if not already
 
 resource_filename = __import__('pkg_resources').resource_filename
@@ -571,3 +576,17 @@ class ITagField(IPlainTextLineField):
 
     .. versionadded:: 1.2.0
     """
+
+class IAllowedAttributeProvider(interface.Interface):
+    """
+    A way to provide a whitelist of additional attribute names that would be
+    allowed while parsing a content fragment, thus extending the attributes
+    already allowed.
+
+    .. versionadded:: 1.4.0
+    """
+
+    allowed_attributes = IndexedIterable(title=u"An iterable of attribute names allowed in a particular context",
+                                         value_type=NativeStringLine(title=u"The attribute name"),
+                                         default=(),
+                                         required=False)

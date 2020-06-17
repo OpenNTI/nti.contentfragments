@@ -2,10 +2,12 @@
  Changes
 =========
 
-1.3.1 (unreleased)
+1.4.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Allow ``IAllowedAttributeProvider`` to be registered to provide
+  additional attributes that would be allowed in sanitized content
+  fragments.
 
 
 1.3.0 (2020-04-06)
