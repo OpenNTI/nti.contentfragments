@@ -6,9 +6,17 @@ __docformat__ = "restructuredtext en"
 
 # pylint:disable=line-too-long
 
+
+import contextlib
+
 from hamcrest import is_
 from hamcrest import assert_that
 from hamcrest import same_instance
+
+from zope import component
+from zope import interface
+
+from nti.contentfragments.interfaces import IAllowedAttributeProvider
 
 from nti.testing.matchers import verifiably_provides
 
@@ -145,12 +153,35 @@ class TestHTTML(ContentfragmentsLayerTest):
         exp = ''
         _check_sanitized(html, exp)
 
-    def test_preserve_data_nti(self):
-        attrs_to_test = ["data-nti-entity-type",
-                         "data-nti-entity-mutability",
-                         "data-nti-entity-id",
-                         "data-nti-entity-username"]
+    def _allowed_attr_provider(self, attrs_to_allow):
+        class TestAllowedAttrProvider(object):
+            allowed_attributes = attrs_to_allow
 
-        for attr in attrs_to_test:
-            html = '<html><body><p><a %s="my_value">Josh Zuech</a></p></body></html>' % attr
-            _check_sanitized(html, html)
+        allowed_attribute_provider = TestAllowedAttrProvider()
+        interface.alsoProvides(allowed_attribute_provider, (IAllowedAttributeProvider,))
+        return allowed_attribute_provider
+
+    def _test_allowed_attribute_provider(self, attr_name, included=True):
+        html = '<html><body><a %s="my_value">Bobby Hagen</a></body></html>' % attr_name
+        exp = html if included else '<html><body><a>Bobby Hagen</a></body></html>'
+        _check_sanitized(html, exp)
+
+    def test_allowed_attribute_provider(self):
+        self._test_allowed_attribute_provider("abc", included=False)
+
+        allowed_attrs = ["abc", "xyz"]
+        allowed_attribute_provider = self._allowed_attr_provider(allowed_attrs)
+
+        with _provide_utility(allowed_attribute_provider):
+            for attr_name in allowed_attrs:
+                self._test_allowed_attribute_provider(attr_name)
+
+
+@contextlib.contextmanager
+def _provide_utility(util):
+    gsm = component.getGlobalSiteManager()
+    gsm.registerUtility(util, IAllowedAttributeProvider)
+    try:
+        yield
+    finally:
+        gsm.unregisterUtility(util, IAllowedAttributeProvider)

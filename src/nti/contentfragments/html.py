@@ -27,6 +27,8 @@ from html5lib.filters import sanitizer
 
 from repoze.lru import lru_cache
 
+from nti.contentfragments.interfaces import IAllowedAttributeProvider
+
 try:
     basestring
 except NameError:
@@ -142,12 +144,14 @@ class _SanitizerFilter(sanitizer.Filter):
             'href',
             'src',
             'style',
-            'xml:lang',
-            'data-nti-entity-type',
-            'data-nti-entity-mutability',
-            'data-nti-entity-id',
-            'data-nti-entity-username',
+            'xml:lang'
         ])
+
+        allowed_attr_provider = component.queryUtility(IAllowedAttributeProvider)
+        if allowed_attr_provider:
+            additional_attrs_allowed = frozenset(allowed_attr_provider.allowed_attributes)
+            allowed_attributes = allowed_attributes | additional_attrs_allowed
+
         self.allowed_attributes = frozenset(((None, attr) for attr in allowed_attributes))
 
         # We use data: URIs to communicate images and sounds in one
