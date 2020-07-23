@@ -189,8 +189,9 @@ class TestHTTML(ContentfragmentsLayerTest):
 
     def test_link_creation(self):
         # Ensure we properly handle html with existing anchors
-        html = 'www.google.com'
-        exp = '<html><body><a href="http://www.google.com">www.google.com</a></body></html>'
+        html = '<p><a href="nextthought.com">NTI</a>www.google.com</p>'
+        exp = '<html><body><p><a href="nextthought.com">NTI</a>' \
+              '<a href="http://www.google.com">www.google.com</a></p></body></html>'
         _check_sanitized(html, exp)
 
 
