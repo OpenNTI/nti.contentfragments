@@ -188,10 +188,19 @@ class TestHTTML(ContentfragmentsLayerTest):
             _check_sanitized(html, exp)
 
     def test_link_creation(self):
-        # Ensure we properly handle html with existing anchors
+        # Ensure links are created for url-like text following anchors
         html = '<p><a href="nextthought.com">NTI</a>www.google.com</p>'
         exp = '<html><body><p><a href="nextthought.com">NTI</a>' \
               '<a href="http://www.google.com">www.google.com</a></p></body></html>'
+        _check_sanitized(html, exp)
+
+    def test_nested_anchors(self):
+        # Links should not be created for the url-like text and nesting
+        # will be split
+        html = '<p><a href="www.nextthought.com">www.nextthought.com' \
+               '<a href="www.google.com">www.google.com</a></a></p>'
+        exp = '<html><body><p><a href="www.nextthought.com">www.nextthought.com</a>' \
+              '<a href="www.google.com">www.google.com</a></p></body></html>'
         _check_sanitized(html, exp)
 
 
