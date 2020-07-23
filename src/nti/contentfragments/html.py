@@ -176,11 +176,17 @@ class _SanitizerFilter(sanitizer.Filter):
         self._ignored_elements = frozenset(['script', 'style'])
         self._ignoring_stack = []
 
+        self._anchor_depth = 0
+
+    @property
+    def _in_anchor(self):
+        return self._anchor_depth > 0
+
     def __iter__(self):
         for token in super(_SanitizerFilter, self).__iter__():
             if token:
                 token_type = token["type"]
-                if token_type == 'Characters':
+                if token_type == 'Characters' and not self._in_anchor:
                     for text_token in self._find_links_in_text(token):
                         yield text_token
                 else:
@@ -232,6 +238,14 @@ class _SanitizerFilter(sanitizer.Filter):
         if token_type == 'Characters' and self._ignoring_stack:
             # character data beneath a rejected element
             return None
+
+        # Indicate whether we're in an anchor tag
+        if token.get('name') == 'a':
+            # Trigger on start/end tags, not others (e.g. empty tags)
+            if token_type == 'StartTag':
+                self._anchor_depth += 1
+            elif token_type == 'EndTag':
+                self._anchor_depth -= 1
 
         result = super(_SanitizerFilter, self).sanitize_token(token)
         return result

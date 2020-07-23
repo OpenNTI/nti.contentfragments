@@ -176,6 +176,33 @@ class TestHTTML(ContentfragmentsLayerTest):
             for attr_name in allowed_attrs:
                 self._test_allowed_attribute_provider(attr_name)
 
+    def test_existing_links(self):
+        allowed_attribute_provider = self._allowed_attr_provider(["data-nti-entity-href"])
+
+        with _provide_utility(allowed_attribute_provider):
+            # Ensure we properly handle html with existing anchors
+            html = '<p><a data-nti-entity-href="http://www.google.com" ' \
+                   'href="http://www.google.com">www.google.com</a></p>'
+            exp = '<html><body><p><a data-nti-entity-href="http://www.google.com" ' \
+                  'href="http://www.google.com">www.google.com</a></p></body></html>'
+            _check_sanitized(html, exp)
+
+    def test_link_creation(self):
+        # Ensure links are created for url-like text following anchors
+        html = '<p><a href="nextthought.com">NTI</a>www.google.com</p>'
+        exp = '<html><body><p><a href="nextthought.com">NTI</a>' \
+              '<a href="http://www.google.com">www.google.com</a></p></body></html>'
+        _check_sanitized(html, exp)
+
+    def test_nested_anchors(self):
+        # Links should not be created for the url-like text and nesting
+        # will be split
+        html = '<p><a href="www.nextthought.com">www.nextthought.com' \
+               '<a href="www.google.com">www.google.com</a></a></p>'
+        exp = '<html><body><p><a href="www.nextthought.com">www.nextthought.com</a>' \
+              '<a href="www.google.com">www.google.com</a></p></body></html>'
+        _check_sanitized(html, exp)
+
 
 @contextlib.contextmanager
 def _provide_utility(util):
