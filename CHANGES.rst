@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.4.1 (unreleased)
+1.5.0 (2020-07-23)
 ==================
 
 - When sanitizing html, disable link creation when already under an anchor.
