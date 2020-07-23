@@ -176,6 +176,12 @@ class TestHTTML(ContentfragmentsLayerTest):
             for attr_name in allowed_attrs:
                 self._test_allowed_attribute_provider(attr_name)
 
+    def test_existing_links(self):
+        # Ensure we properly handle html with existing anchors
+        html = '<html><body><p><a href="http://www.google.com">www.google.com</a></p></body></html>'
+        exp = '<html><body><p><a href="http://www.google.com">www.google.com</a></p></body></html>'
+        _check_sanitized(html, exp)
+
 
 @contextlib.contextmanager
 def _provide_utility(util):
