@@ -5,7 +5,7 @@
 1.4.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- When sanitizing html, disable link creation when already under an anchor.
 
 
 1.4.0 (2020-06-17)
