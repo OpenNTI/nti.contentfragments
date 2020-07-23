@@ -177,9 +177,20 @@ class TestHTTML(ContentfragmentsLayerTest):
                 self._test_allowed_attribute_provider(attr_name)
 
     def test_existing_links(self):
+        allowed_attribute_provider = self._allowed_attr_provider(["data-nti-entity-href"])
+
+        with _provide_utility(allowed_attribute_provider):
+            # Ensure we properly handle html with existing anchors
+            html = '<p><a data-nti-entity-href="http://www.google.com" ' \
+                   'href="http://www.google.com">www.google.com</a></p>'
+            exp = '<html><body><p><a data-nti-entity-href="http://www.google.com" ' \
+                  'href="http://www.google.com">www.google.com</a></p></body></html>'
+            _check_sanitized(html, exp)
+
+    def test_link_creation(self):
         # Ensure we properly handle html with existing anchors
-        html = '<html><body><p><a href="http://www.google.com">www.google.com</a></p></body></html>'
-        exp = '<html><body><p><a href="http://www.google.com">www.google.com</a></p></body></html>'
+        html = 'www.google.com'
+        exp = '<html><body><a href="http://www.google.com">www.google.com</a></body></html>'
         _check_sanitized(html, exp)
 
 
