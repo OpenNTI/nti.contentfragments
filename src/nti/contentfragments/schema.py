@@ -74,7 +74,6 @@ class _FromUnicodeMixin(object):
 
         # We're imported too early for ZCA to be configured and we can't automatically
         # adapt.
-        from IPython.terminal.debugger import set_trace; set_trace()
         if 'default' in kwargs and not self._iface.providedBy(kwargs['default']):
             kwargs['default'] = self._impl(kwargs['default'])
         if 'default' not in kwargs and 'defaultFactory' not in kwargs and not kwargs.get('min_length'):  # 0/None
