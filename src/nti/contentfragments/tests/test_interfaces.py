@@ -30,14 +30,12 @@ from zope import interface
 
 from zope.schema.interfaces import ConstraintNotSatisfied
 
-from . import ContentfragmentsLayerTest
-
 from ..interfaces import HTMLContentFragment
 from ..interfaces import UnicodeContentFragment
 from ..interfaces import PlainTextContentFragment
 from ..interfaces import IPlainTextContentFragment
 from ..interfaces import SanitizedHTMLContentFragment
-from ..interfaces import IUnicodeContentFragment
+from ..interfaces import RstContentFragment
 
 
 try:
@@ -81,6 +79,8 @@ class TestMisc(unittest.TestCase):
     def test_mime_types(self):
         assert_that(mimetypes.guess_type('foo.jsonp'),
                     is_(('application/json', None)))
+        assert_that(mimetypes.guess_type('foo.rst'),
+                    is_(('text/x-rst', None)))
 
     def test_cant_get_dict_weakref_of_frag(self):
         frag = HTMLContentFragment()
@@ -158,7 +158,8 @@ class TestMisc(unittest.TestCase):
 
     def test_dont_lose_type_on_common_ops(self):
 
-        for t in SanitizedHTMLContentFragment, HTMLContentFragment, PlainTextContentFragment:
+        for t in SanitizedHTMLContentFragment, HTMLContentFragment, \
+                 PlainTextContentFragment, RstContentFragment:
             s1 = t(u'safe')
 
             assert_that(s1.translate({ord('s'): u't'}), is_(t))

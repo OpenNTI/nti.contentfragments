@@ -52,6 +52,7 @@ TestTextLineUnicodeContentFragment = _make_test_class('TextLineUnicodeContentFra
 TestLatexFragmentTextLine = _make_test_class('LatexFragmentTextLine')
 TestPlainTextLine = _make_test_class('PlainTextLine')
 TestHTMLContentFragment = _make_test_class('HTMLContentFragment')
+TestRstContentFragment = _make_test_class('RstContentFragment')
 
 
 class TestSanitizedHTMLContentFragment(_make_test_class('SanitizedHTMLContentFragment')):

@@ -8,6 +8,10 @@ or :mod:`zope.schema` declarations.
 """
 
 from __future__ import print_function, absolute_import, division
+
+from nti.contentfragments.interfaces import IRstContentFragment
+from nti.contentfragments.interfaces import IRstContentFragmentField
+
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -20,6 +24,7 @@ import unicodedata
 from zope.interface import implementer
 
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
+from .interfaces import RstContentFragment as RstContentFragmentType
 from .interfaces import IHTMLContentFragment
 from .interfaces import LatexContentFragment
 from .interfaces import ILatexContentFragment
@@ -69,6 +74,7 @@ class _FromUnicodeMixin(object):
 
         # We're imported too early for ZCA to be configured and we can't automatically
         # adapt.
+        from IPython.terminal.debugger import set_trace; set_trace()
         if 'default' in kwargs and not self._iface.providedBy(kwargs['default']):
             kwargs['default'] = self._impl(kwargs['default'])
         if 'default' not in kwargs and 'defaultFactory' not in kwargs and not kwargs.get('min_length'):  # 0/None
@@ -194,6 +200,27 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
 
     _iface = ISanitizedHTMLContentFragment
     _impl = SanitizedHTMLContentFragmentType
+
+
+@implementer(IRstContentFragmentField)
+class RstContentFragment(TextUnicodeContentFragment):
+    """
+    A :class:`Text` type that also requires the object implement
+    an interface descending from :class:`.IRstContentFragment`.
+    Note that currently this does no validation of the content to
+    ensure it is valid reStructuredText.
+
+    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
+    argument for :class:`~zope.schema.Object` is already handled.
+
+    .. note:: If you provide a ``default`` string that does not already provide :class:`.ISanitizedHTMLContentFragment`,
+        one will be created simply by copying; no validation or transformation will occur.
+
+    """
+
+    _iface = IRstContentFragment
+    _impl = RstContentFragmentType
+
 
 @implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):

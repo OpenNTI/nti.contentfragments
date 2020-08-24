@@ -2,10 +2,11 @@
  Changes
 =========
 
-1.5.1 (unreleased)
+1.6.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for reStructuredText content fragments and corresponding
+  fields.
 
 
 1.5.0 (2020-07-23)

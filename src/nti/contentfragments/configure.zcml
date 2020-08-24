@@ -67,6 +67,10 @@
              for=".interfaces.IUnicode"
              provides=".interfaces.IHTMLContentFragment" />
 
+    <adapter factory=".interfaces.RstContentFragment"
+             for=".interfaces.IUnicode"
+             provides=".interfaces.IRstContentFragment" />
+
     <!--
     We can convert arbitrary strings to a unicode content fragment.
     This will either create a plain text or HTML fragment.
