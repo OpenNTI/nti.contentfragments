@@ -8,10 +8,6 @@ or :mod:`zope.schema` declarations.
 """
 
 from __future__ import print_function, absolute_import, division
-
-from nti.contentfragments.interfaces import IRstContentFragment
-from nti.contentfragments.interfaces import IRstContentFragmentField
-
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -24,7 +20,6 @@ import unicodedata
 from zope.interface import implementer
 
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
-from .interfaces import RstContentFragment as RstContentFragmentType
 from .interfaces import IHTMLContentFragment
 from .interfaces import LatexContentFragment
 from .interfaces import ILatexContentFragment
@@ -34,6 +29,8 @@ from .interfaces import PlainTextContentFragment
 from .interfaces import IPlainTextContentFragment
 from .interfaces import SanitizedHTMLContentFragment as SanitizedHTMLContentFragmentType
 from .interfaces import ISanitizedHTMLContentFragment
+from .interfaces import RstContentFragment as RstContentFragmentType
+from .interfaces import IRstContentFragment
 
 from .interfaces import ITextUnicodeContentFragmentField
 from .interfaces import ITextLineUnicodeContentFragmentField
@@ -43,6 +40,8 @@ from .interfaces import IPlainTextField
 from .interfaces import IHTMLContentFragmentField
 from .interfaces import ISanitizedHTMLContentFragmentField
 from .interfaces import ITagField
+from .interfaces import IRstContentFragmentField
+
 
 from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
@@ -212,7 +211,7 @@ class RstContentFragment(TextUnicodeContentFragment):
     Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
     argument for :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.ISanitizedHTMLContentFragment`,
+    .. note:: If you provide a ``default`` string that does not already provide :class:`.IRstContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
 
     """
