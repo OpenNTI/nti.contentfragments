@@ -588,7 +588,7 @@ class IRstContentFragmentField(ITextUnicodeContentFragmentField):
     A :class:`~zope.schema.Text` type that also requires the object implement
     an interface descending from :class:`.IRstContentFragment`.
 
-    .. versionadded:: 1.2.0
+    .. versionadded:: 1.6.0
     """
 
 
