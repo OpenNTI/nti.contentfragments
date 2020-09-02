@@ -76,6 +76,7 @@ setup(
         # https://github.com/pytries/datrie/issues/52
 
         "datrie >= 0.8.2 ; platform_python_implementation == 'CPython'",
+        'docutils',
     ],
     extras_require={
         'test': TESTS_REQUIRE,
