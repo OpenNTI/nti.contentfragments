@@ -15,7 +15,10 @@ logger = __import__('logging').getLogger(__name__)
 # pylint: disable=too-many-ancestors
 # pylint:disable=useless-object-inheritance
 
+import sys
 import unicodedata
+
+import six
 
 from zope.interface import implementer
 
@@ -227,8 +230,9 @@ class RstContentFragment(TextUnicodeContentFragment):
         try:
             return _FromUnicodeMixin.fromUnicode(self, value)
         except RstParseError as e:
-            raise InvalidValue("Error parsing reStructuredText: %s" % (e.args[0],))
-
+            ex = InvalidValue("Error parsing reStructuredText: %s" % (e,))
+            ex = ex.with_field_and_value(self, value)
+            six.reraise(InvalidValue, ex, sys.exc_info()[2])
 
 @implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):

@@ -9,6 +9,10 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
+import sys
+
+import six
+
 from docutils.core import publish_parts
 from docutils.utils import SystemMessage
 
@@ -51,6 +55,6 @@ def check_user_rst(input):
             settings = SETTINGS.copy()
             publish_parts(input, settings_overrides=settings)
         except SystemMessage as e:
-            raise RstParseError(e.args[0])
+            six.reraise(RstParseError, RstParseError(*e.args), sys.exc_info()[2])
 
     return RstContentFragment(input)
