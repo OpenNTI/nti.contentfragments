@@ -19,6 +19,8 @@ import unicodedata
 
 from zope.interface import implementer
 
+from zope.schema.interfaces import InvalidValue
+
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
 from .interfaces import IHTMLContentFragment
 from .interfaces import LatexContentFragment
@@ -42,10 +44,12 @@ from .interfaces import ISanitizedHTMLContentFragmentField
 from .interfaces import ITagField
 from .interfaces import IRstContentFragmentField
 
+from .rst import RstParseError
 
 from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
 from nti.schema.field import ValidTextLine as TextLine
+
 
 class _FromUnicodeMixin(object):
 
@@ -218,6 +222,12 @@ class RstContentFragment(TextUnicodeContentFragment):
 
     _iface = IRstContentFragment
     _impl = RstContentFragmentType
+
+    def fromUnicode(self, value):
+        try:
+            return _FromUnicodeMixin.fromUnicode(self, value)
+        except RstParseError as e:
+            raise InvalidValue("Error parsing reStructuredText: %s" % (e.args[0],))
 
 
 @implementer(IPlainTextField)
