@@ -15,9 +15,14 @@ logger = __import__('logging').getLogger(__name__)
 # pylint: disable=too-many-ancestors
 # pylint:disable=useless-object-inheritance
 
+import sys
 import unicodedata
 
+import six
+
 from zope.interface import implementer
+
+from zope.schema.interfaces import InvalidValue
 
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
 from .interfaces import IHTMLContentFragment
@@ -29,6 +34,8 @@ from .interfaces import PlainTextContentFragment
 from .interfaces import IPlainTextContentFragment
 from .interfaces import SanitizedHTMLContentFragment as SanitizedHTMLContentFragmentType
 from .interfaces import ISanitizedHTMLContentFragment
+from .interfaces import RstContentFragment as RstContentFragmentType
+from .interfaces import IRstContentFragment
 
 from .interfaces import ITextUnicodeContentFragmentField
 from .interfaces import ITextLineUnicodeContentFragmentField
@@ -38,10 +45,14 @@ from .interfaces import IPlainTextField
 from .interfaces import IHTMLContentFragmentField
 from .interfaces import ISanitizedHTMLContentFragmentField
 from .interfaces import ITagField
+from .interfaces import IRstContentFragmentField
+
+from .rst import RstParseError
 
 from nti.schema.field import Object
 from nti.schema.field import ValidText as Text
 from nti.schema.field import ValidTextLine as TextLine
+
 
 class _FromUnicodeMixin(object):
 
@@ -194,6 +205,34 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
 
     _iface = ISanitizedHTMLContentFragment
     _impl = SanitizedHTMLContentFragmentType
+
+
+@implementer(IRstContentFragmentField)
+class RstContentFragment(TextUnicodeContentFragment):
+    """
+    A :class:`Text` type that also requires the object implement
+    an interface descending from :class:`.IRstContentFragment`.
+    Note that currently this does no validation of the content to
+    ensure it is valid reStructuredText.
+
+    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
+    argument for :class:`~zope.schema.Object` is already handled.
+
+    .. note:: If you provide a ``default`` string that does not already provide :class:`.IRstContentFragment`,
+        one will be created simply by copying; no validation or transformation will occur.
+
+    """
+
+    _iface = IRstContentFragment
+    _impl = RstContentFragmentType
+
+    def fromUnicode(self, value):
+        try:
+            return _FromUnicodeMixin.fromUnicode(self, value)
+        except RstParseError as e:
+            ex = InvalidValue("Error parsing reStructuredText: %s" % (e,))
+            ex = ex.with_field_and_value(self, value)
+            six.reraise(InvalidValue, ex, sys.exc_info()[2])
 
 @implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):

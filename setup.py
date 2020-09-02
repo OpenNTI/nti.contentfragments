@@ -19,7 +19,7 @@ def _read(fname):
     with codecs.open(fname, encoding='utf-8') as f:
         return f.read()
 
-version = '1.5.1.dev0'
+version = '1.6.0.dev0'
 
 setup(
     name='nti.contentfragments',
@@ -76,6 +76,7 @@ setup(
         # https://github.com/pytries/datrie/issues/52
 
         "datrie >= 0.8.2 ; platform_python_implementation == 'CPython'",
+        'docutils',
     ],
     extras_require={
         'test': TESTS_REQUIRE,

@@ -236,6 +236,18 @@ class IHTMLContentFragment(IUnicodeContentFragment, IContentTypeTextHtml):
     """
 
 
+IContentTypeTextRst = getattr(mime_types, 'IContentTypeTextRst')
+class IRstContentFragment(IUnicodeContentFragment, IContentTypeTextRst):
+    """
+    Interface representing content in RST format.
+    """
+
+
+@interface.implementer(IRstContentFragment)
+class RstContentFragment(UnicodeContentFragment):
+    pass
+
+
 # NOTE The implementations of the add methods go directly to
 # unicode and not up the super() chain to avoid as many extra
 # copies as possible
@@ -569,6 +581,16 @@ class IPlainTextField(ITextUnicodeContentFragmentField):
 
     .. versionadded:: 1.2.0
     """
+
+
+class IRstContentFragmentField(ITextUnicodeContentFragmentField):
+    """
+    A :class:`~zope.schema.Text` type that also requires the object implement
+    an interface descending from :class:`.IRstContentFragment`.
+
+    .. versionadded:: 1.6.0
+    """
+
 
 class ITagField(IPlainTextLineField):
     """

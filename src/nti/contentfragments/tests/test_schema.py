@@ -9,11 +9,15 @@ from __future__ import print_function
 
 
 from hamcrest import assert_that
+from hamcrest import calling
 from hamcrest import has_key
 from hamcrest import has_entries
 from hamcrest import is_
+from hamcrest import raises
 
 from zope.dottedname import resolve as dottedname
+
+from nti.schema.interfaces import InvalidValue
 
 from nti.testing.matchers import validly_provides
 from nti.testing.matchers import is_false
@@ -52,6 +56,14 @@ TestTextLineUnicodeContentFragment = _make_test_class('TextLineUnicodeContentFra
 TestLatexFragmentTextLine = _make_test_class('LatexFragmentTextLine')
 TestPlainTextLine = _make_test_class('PlainTextLine')
 TestHTMLContentFragment = _make_test_class('HTMLContentFragment')
+
+
+class TestRstContentFragment(_make_test_class('RstContentFragment')):
+
+    def test_invalid_rst(self):
+        fragment = self._makeOne()
+        assert_that(calling(fragment.fromUnicode).with_args(u".. invalid::"),
+                    raises(InvalidValue, u"Unknown directive"))
 
 
 class TestSanitizedHTMLContentFragment(_make_test_class('SanitizedHTMLContentFragment')):
