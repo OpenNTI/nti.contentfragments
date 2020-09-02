@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.6.0 (unreleased)
+1.6.0 (2020-09-02)
 ==================
 
 - Add support for reStructuredText content fragments and corresponding
