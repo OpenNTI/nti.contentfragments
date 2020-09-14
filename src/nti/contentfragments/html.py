@@ -185,6 +185,7 @@ class _SanitizerFilter(sanitizer.Filter):
     def __iter__(self):
         for token in super(_SanitizerFilter, self).__iter__():
             if token:
+                __traceback_info__ = token
                 token_type = token["type"]
                 if token_type == 'Characters' and not self._in_anchor:
                     for text_token in self._find_links_in_text(token):
@@ -195,6 +196,7 @@ class _SanitizerFilter(sanitizer.Filter):
     def _find_links_in_text(self, token):
         text = token['data']
         text_and_links = self.link_finder.find_links(text) if self.link_finder else ()
+        #if len(text_and_links) == 0 we return None instead of token
         if len(text_and_links) != 1 or text_and_links[0] != text:
 
             def _unicode(x):
@@ -267,7 +269,7 @@ class _SanitizerFilter(sanitizer.Filter):
 
         # Otherwise, don't escape the tag, simply drop the tag name, but
         # preserve the contents.
-        token['data'] = ''
+        token['data'] = u''
         token["type"] = "Characters"
 
         del token["name"]

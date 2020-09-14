@@ -5,7 +5,7 @@
 1.6.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Ensure disallowed tags nested within anchors do not raise
 
 
 1.6.0 (2020-09-02)

@@ -129,7 +129,6 @@ class TestHTTML(ContentfragmentsLayerTest):
         assert_that(frag_html._html_to_sanitized_text(plain_text),
                     is_(same_instance(plain_text)))
 
-
     def test_sanitize_img(self):
         html = '<html><body><img style="color: blue; text-align: left; max-width: 10px" href="foo"></body></html>'
         exp = '<html><body><img href="foo" style="color: blue; text-align: left; max-width: 100%;" /></body></html>'
@@ -202,6 +201,14 @@ class TestHTTML(ContentfragmentsLayerTest):
         exp = '<html><body><p><a href="www.nextthought.com">www.nextthought.com</a>' \
               '<a href="www.google.com">www.google.com</a></p></body></html>'
         _check_sanitized(html, exp)
+
+    def test_disallowed(self):
+        html = '<div>'
+        _check_sanitized(html, u'')
+
+    def test_disallowed_within_anchor(self):
+        html = '<a href="www.nextthought.com"><div>test</div></a>'
+        _check_sanitized(html, u'<html><body><a href="www.nextthought.com">test</a></body></html>')
 
 
 @contextlib.contextmanager
