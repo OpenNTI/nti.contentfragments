@@ -5,7 +5,8 @@
 1.6.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Ensure disallowed tags nested within anchors do not raise.
+  See `issue 34 <https://github.com/NextThought/nti.contentfragments/issues/34>`.
 
 
 1.6.0 (2020-09-02)
