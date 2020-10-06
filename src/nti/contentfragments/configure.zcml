@@ -141,6 +141,18 @@
     <adapter factory=".interfaces._plain_text_to_plain_text"
              name="text" />
 
+    <!--
+        Provide for converting rST to plaintext.
+    -->
+    <adapter factory=".rst.rst_to_plaintext"
+             for=".interfaces.IRstContentFragment"
+             provides=".interfaces.IPlainTextContentFragment" />
+
+    <adapter factory=".rst.rst_to_plaintext"
+             name="text"
+             for=".interfaces.IRstContentFragment"
+             provides=".interfaces.IPlainTextContentFragment" />
+
     <!-- Censoring -->
     <!-- Defaults -->
     <utility factory=".censor._word_plus_trivial_profanity_scanner" />
