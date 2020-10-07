@@ -5,7 +5,7 @@
 1.6.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Allow conversion of reStructuredText fragments to plain text.
 
 
 1.6.1 (2020-09-14)

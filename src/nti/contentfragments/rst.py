@@ -13,9 +13,12 @@ import sys
 
 import six
 
+from docutils.core import publish_doctree
 from docutils.core import publish_parts
+
 from docutils.utils import SystemMessage
 
+from .interfaces import PlainTextContentFragment
 from .interfaces import RstContentFragment
 
 
@@ -48,13 +51,25 @@ class RstParseError(Exception):
     """
 
 
+def _publish_doctree(input):
+    try:
+        settings = SETTINGS.copy()
+        return publish_doctree(input, settings_overrides=settings)
+    except SystemMessage as e:
+        six.reraise(RstParseError, RstParseError(*e.args), sys.exc_info()[2])
+
+
 def check_user_rst(input):
 
     if input:
-        try:
-            settings = SETTINGS.copy()
-            publish_parts(input, settings_overrides=settings)
-        except SystemMessage as e:
-            six.reraise(RstParseError, RstParseError(*e.args), sys.exc_info()[2])
+        _publish_doctree(input)
 
     return RstContentFragment(input)
+
+
+def rst_to_plaintext(input):
+
+    if input:
+        input = _publish_doctree(input).astext()
+
+    return PlainTextContentFragment(input)
