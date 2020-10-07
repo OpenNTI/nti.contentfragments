@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.6.2 (unreleased)
+1.7.0 (2020-10-07)
 ==================
 
 - Allow conversion of reStructuredText fragments to plain text.
