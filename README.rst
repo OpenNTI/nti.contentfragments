@@ -10,8 +10,8 @@
         :target: https://pypi.org/project/nti.contentfragments/
         :alt: Supported Python versions
 
-.. image:: https://travis-ci.org/NextThought/nti.contentfragments.svg?branch=master
-        :target: https://travis-ci.org/NextThought/nti.contentfragments
+.. image:: https://github.com/NextThought/nti.contentfragments/workflows/tests/badge.svg
+        :target: https://github.com/NextThought/nti.contentfragments/actions?query=workflow%3Atests
 
 .. image:: https://coveralls.io/repos/github/NextThought/nti.contentfragments/badge.svg
         :target: https://coveralls.io/github/NextThought/nti.contentfragments
