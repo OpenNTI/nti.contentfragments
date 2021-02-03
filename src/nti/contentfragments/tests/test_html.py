@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
 # pylint:disable=line-too-long,too-many-public-methods
+# pylint:disable=import-outside-toplevel
 
 import os
 import contextlib
@@ -43,14 +44,33 @@ class _StringConversionMixin(object):
     # this interface.
     EXP_IFACE = None
 
-    def _check_sanitized(self, inp, expect):
+    # If you're testing particular fragment types as input,
+    # set this to the factory (class) that creates that type
+    INP_FACTORY = staticmethod(lambda inp: inp)
+
+    def _check_sanitized(self, inp, expect, _again=True):
         # Given exactly a raw string, not a content fragment.
         assert type(inp) in (bytes, type(u'')) # pylint:disable=unidiomatic-typecheck
-        was = self.CONV_IFACE(inp)
-        __traceback_info__ = inp, type(inp), was, type(was)
-        assert_that(was, is_(expect.strip()))
-        assert_that(was, verifiably_provides(self.EXP_IFACE))
-        return was
+        inp = self.INP_FACTORY(inp)
+        converted = self.CONV_IFACE(inp)
+        __traceback_info__ = inp, type(inp), converted, type(converted)
+        assert_that(converted, is_(expect.strip()))
+        assert_that(converted, verifiably_provides(self.EXP_IFACE))
+        return converted
+
+    def _to_one_stripped_line(self, inp):
+        """
+        Collapse *inp* to one line, with all leading and trailing whitespace removed.
+        (Similar to textwrap.dedent)
+        """
+        one_line = u''.join(l.strip() for l in inp.splitlines())
+        assert u'\n' not in one_line
+        return one_line
+
+    def tearDown(self):
+        from nti.contentfragments.html import _cache_maker
+        _cache_maker.clear()
+        super(_StringConversionMixin, self).tearDown()
 
 
 class TestStringInputToPlainTextOutput(_StringConversionMixin, ContentfragmentsLayerTest):
@@ -59,19 +79,55 @@ class TestStringInputToPlainTextOutput(_StringConversionMixin, ContentfragmentsL
 
     def test_sanitize_removes_empty(self):
         # If everything is removed, resulting in an empty string, it's just plain text.
-        html = '<html><body><span></span></body></html>'
+        html = u'<html><body><span></span></body></html>'
         exp = u''
         self._check_sanitized(html, exp)
 
-        html = '<div>'
+        html = u'<div>'
         self._check_sanitized(html, u'')
 
     def test_sanitize_remove_inner_elems_empty(self):
         # As for `test_sanitize_removes_empty`, but here we have content hiding
         # inside forbidden elements.
-        html = '<html><body><script><div /><span>Hi</span></script><style><span>hi</span></style></body></html>'
+        html = u'<html><body><script><div /><span>Hi</span></script><style><span>hi</span></style></body></html>'
         exp = u''
         self._check_sanitized(html, exp)
+
+    def test_embedded_table(self):
+        markdown = u"""
+This is a regular paragraph.
+
+<table>
+    <tr>
+        <td>Foo</td>
+    </tr>
+    <tr>
+        <td>Bar</td>
+    </tr>
+</table>
+
+This is another regular paragraph.
+        """
+        exp = """\
+This is a regular paragraph.  Foo
+---
+Bar
+This is another regular paragraph.\
+        """
+        self._check_sanitized(markdown, exp)
+
+    def test_embedded_random_tags(self):
+        markdown = u"""
+Some beginning text.
+
+<random_tag>
+  <ns:foo xmlns:foo="http://example.com">A foo tag.<ns:foo>
+</random_tag>
+
+Some ending text.
+        """
+        exp = """Some beginning text.  A foo tag. Some ending text."""
+        self._check_sanitized(markdown, exp)
 
     def test_sanitize_remove_tags_leave_content(self):
         # If all tags are removed, its just plain text
@@ -91,6 +147,13 @@ class TestStringInputToPlainTextOutput(_StringConversionMixin, ContentfragmentsL
         html = u'Hi, Ken. &nbsp;Here is the answer. &nbsp;Check this website www_xyz_com'
         expt = u'Hi, Ken.  Here is the answer.  Check this website www_xyz_com\n'
         self._check_sanitized(html, expt)
+
+class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
+
+    def _check_sanitized(self, html, expt): # pylint:disable=arguments-differ
+        assert isinstance(html, type(u''))
+        html = html.encode('latin-1')
+        return super(TestByteInputToPlainTextOutput, self)._check_sanitized(html, expt)
 
 
 class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTest):
@@ -117,11 +180,7 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
     def test_normalize_html_text_to_par(self):
         html = u'<html><body><p style=" text-align: left;"><span style="font-family: \'Helvetica\';  font-size: 12pt; color: black;">The pad replies to my note.</span></p>The server edits it.</body></html>'
         exp = u'<html><body><p style="text-align: left;"><span>The pad replies to my note.</span></p><p style="text-align: left;">The server edits it.</p></body></html>'
-        sanitized = self._check_sanitized(html, exp)
-
-        plain_text = frg_interfaces.IPlainTextContentFragment(sanitized)
-        assert_that(plain_text, verifiably_provides(frg_interfaces.IPlainTextContentFragment))
-        assert_that(plain_text, is_("The pad replies to my note.The server edits it."))
+        self._check_sanitized(html, exp)
 
     def test_normalize_simple_style_color(self):
         html = u'<html><body><p><span style="color: black;">4</span></p></body></html>'
@@ -141,12 +200,6 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
         exp = html
         sanitized = self._check_sanitized(html, exp)
         assert_that(sanitized, is_(exp))
-
-    def test_html_to_text(self):
-        exp = frg_interfaces.HTMLContentFragment('<html><body><p style="text-align: left;"><span>The pad replies to my note.</span></p><p style="text-align: left;">The server edits it.</p></body></html>')
-        plain_text = frg_interfaces.IPlainTextContentFragment(exp)
-        assert_that(plain_text, verifiably_provides(frg_interfaces.IPlainTextContentFragment))
-        assert_that(plain_text, is_("The pad replies to my note.The server edits it."))
 
     def test_rejected_tags(self):
         html = u'<html><body><style>* { font: "Helvetica";}</style><p style=" text-align: left;">The text</div></body></html>'
@@ -177,17 +230,26 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
         plain_text = frg_interfaces.IPlainTextContentFragment(html)
         assert_that(plain_text, verifiably_provides(frg_interfaces.IPlainTextContentFragment))
         # The lxml implementation loses the link entirely.
-        # expected = """For help, [email us](email:support@nextthought.com)"""
-        expected = """For help, email us"""
+        # expected = """For help, email us"""
+        expected = """For help, [email us](email:support@nextthought.com)"""
         assert_that(plain_text, is_(expected))
 
     def test_sanitize_user_html_chat(self):
-        html = u'<html><a href=\'http://tag:nextthought.com,2011-10:julie.zhu-OID-0x148a37:55736572735f315f54657374:hjJe3dfZMVb,"body":["5:::{\\"args\\\'>foo</html>'
+        # Note this is badly malformed. The <a> tag is never closed,
+        # and neither is the href attribute, exactly: the closing ' is \'
+        href = u"""http://tag:nextthought.com,2011-10:julie.zhu-OID-0x148a37:55736572735f315f54657374:hjJe3dfZMVb,"body":["5:::{\"args"""
+        html = u"""\
+        <html>
+        <a href='%s\\'>
+        foo
+        </html>
+        """ % (href,)
+
         plain_text = frg_interfaces.IPlainTextContentFragment(html)
         assert_that(plain_text, verifiably_provides(frg_interfaces.IPlainTextContentFragment))
-        # Was just "foo" in the lxml based implementation
-        expected = "foo"
-        #expected = """[foo"""
+        # Was just "foo" in the lxml based implementation (before the addition of spaces)
+        # expected = "foo"
+        expected = """[ foo"""
         assert_that(plain_text, is_(expected))
 
         # idempotent
@@ -262,6 +324,77 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
     def test_disallowed_within_anchor(self):
         html = '<a href="www.nextthought.com"><div>test</div></a>'
         self._check_sanitized(html, u'<html><body><a href="www.nextthought.com">test</a></body></html>')
+
+
+class TestHTMLFragmentToPlainText(_StringConversionMixin, ContentfragmentsLayerTest):
+
+    INP_FACTORY = frg_interfaces.HTMLContentFragment
+    CONV_IFACE = frg_interfaces.IPlainTextContentFragment
+    EXP_IFACE = frg_interfaces.IPlainTextContentFragment
+
+    def test_html_to_text(self):
+        # The old lxml implementation didn't produce any newlines in the
+        # output if the HTML comes in all on one line. The new version produces
+        # the same output either way. The old version also adds leading newlines
+        # if there is leading newlines in the input
+        raw_html = u"""
+        <html>
+        <body>
+        <p style="text-align: left;">
+        <span>The pad replies to my note.</span>
+        </p>
+        <p style="text-align: left;">The server edits it.</p>
+        </body>
+        </html>
+        """
+
+        one_line_html = self._to_one_stripped_line(raw_html)
+
+        expt = u"The pad replies to my note.\n\nThe server edits it."
+        self._check_sanitized(one_line_html, expt)
+        self._check_sanitized(raw_html, expt)
+
+
+class TestSanitizedHTMLFragmentToPlainText(_StringConversionMixin, ContentfragmentsLayerTest):
+    INP_FACTORY = frg_interfaces.ISanitizedHTMLContentFragment
+    CONV_IFACE = frg_interfaces.IPlainTextContentFragment
+    EXP_IFACE = frg_interfaces.IPlainTextContentFragment
+
+    EXAMPLE = u"""
+        <html>
+        <body>
+        <p style=" text-align: left;">
+        <span style="font-family: \'Helvetica\';  font-size: 12pt; color: black;">
+        The pad replies to my note.
+        </span>
+        </p>
+        The server edits it.
+        </body>
+        </html>
+        """
+
+    def test_html_to_text(self):
+        # Just like with ``TestHTMLFragmentToPlainText.test_html_to_text``
+        raw_html = self.EXAMPLE
+        one_line_html = self._to_one_stripped_line(raw_html)
+
+        expt = u"The pad replies to my note.\n\nThe server edits it."
+        for html in one_line_html, raw_html:
+            __traceback_info__ = html
+            assert_that(self.INP_FACTORY(html),
+                        is_(frg_interfaces.SanitizedHTMLContentFragment))
+            self._check_sanitized(html, expt)
+
+
+class TestSanitizeUserHtmlFunction(TestHTMLFragmentToPlainText):
+    # Just like going through the interfaces, but called directly.
+    # this is legacy functionality for callers passing a method directly.
+
+    def CONV_IFACE(self, html):
+        from nti.contentfragments.html import sanitize_user_html
+        return sanitize_user_html(html, 'text')
+
+
 
 
 @contextlib.contextmanager

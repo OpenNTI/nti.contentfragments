@@ -83,6 +83,10 @@
              for=".interfaces.IUnicode"
              provides=".interfaces.IUnicodeContentFragment" />
 
+    <adapter factory=".html.sanitize_user_html"
+             for=".interfaces.IBytes"
+             provides=".interfaces.IUnicodeContentFragment" />
+
     <!-- This is something of a lie. It might sanitize to plain text -->
     <adapter factory=".html.sanitize_user_html"
              for=".interfaces.IHTMLContentFragment"
@@ -113,6 +117,9 @@
     <adapter factory=".html._sanitize_user_html_to_text"
              for=".interfaces.IUnicode"
              name="text"
+             provides=".interfaces.IPlainTextContentFragment" />
+    <adapter factory=".html._sanitize_user_html_to_text"
+             for=".interfaces.IBytes"
              provides=".interfaces.IPlainTextContentFragment" />
 
     <!--
