@@ -198,9 +198,10 @@ class _SanitizerFilter(sanitizer.Filter):
     def _find_links_in_text(self, token):
         if self.link_finder is None:
             yield token
+            return
             
         text = token['data']
-        text_and_links = self.link_finder.find_links(text) if self.link_finder else ()
+        text_and_links = self.link_finder.find_links(text)
         if len(text_and_links) != 1 or text_and_links[0] != text:
 
             def _unicode(x):
