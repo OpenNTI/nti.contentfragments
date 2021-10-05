@@ -18,6 +18,7 @@ from zope import component
 from zope import interface
 
 from nti.contentfragments.interfaces import IAllowedAttributeProvider
+from nti.contentfragments.interfaces import IHyperlinkFormatter
 
 from nti.testing.matchers import verifiably_provides
 
@@ -154,7 +155,6 @@ class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
         assert isinstance(html, type(u''))
         html = html.encode('latin-1')
         return super(TestByteInputToPlainTextOutput, self)._check_sanitized(html, expt)
-
 
 class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTest):
 
@@ -312,6 +312,12 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
               '<a href="http://www.google.com">www.google.com</a></p></body></html>'
         self._check_sanitized(html, exp)
 
+    def test_no_link_formatter(self):
+        with _link_formatter(None):
+            html = '<p>look at this</p>'
+            exp = '<html><body><p>look at this</p></body></html>'
+            self._check_sanitized(html, exp)
+
     def test_nested_anchors(self):
         # Links should not be created for the url-like text and nesting
         # will be split
@@ -396,6 +402,22 @@ class TestSanitizeUserHtmlFunction(TestHTMLFragmentToPlainText):
 
 
 
+@contextlib.contextmanager
+def _link_formatter(util):
+    gsm = component.getGlobalSiteManager()
+    current = gsm.getUtility(IHyperlinkFormatter)
+    if current is not None:
+        gsm.unregisterUtility(current, IHyperlinkFormatter)
+
+    if util is not None:
+        gsm.registerUtility(util, IHyperlinkFormatter)
+    try:
+        yield
+    finally:
+        if util is not None:
+            gsm.unregisterUtility(util, IHyperlinkFormatter)
+        if current is not None:
+            gsm.registerUtility(current, IHyperlinkFormatter)
 
 @contextlib.contextmanager
 def _provide_utility(util):
