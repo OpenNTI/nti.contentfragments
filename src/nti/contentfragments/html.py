@@ -123,7 +123,7 @@ class _NoopHyperlinkFormatter(object):
 
     def format(self, html_fragment):
         # TODO should this just return html_fragment?
-        raise NotImplemented
+        raise NotImplemented # pragma: no cover
 
 
 # But we define our own sanitizer mixin subclass and filter to be able to
