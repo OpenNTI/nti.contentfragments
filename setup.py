@@ -78,6 +78,10 @@ setup(
 
         "datrie >= 0.8.2 ; platform_python_implementation == 'CPython'",
         'docutils',
+
+        # For HTML to plain text (markdown) conversion.
+        # Python 2 support was dropped after 2019.8.11
+        'html2text >= 2019.8.11',
     ],
     extras_require={
         'test': TESTS_REQUIRE,

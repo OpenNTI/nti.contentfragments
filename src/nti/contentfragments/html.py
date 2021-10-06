@@ -25,7 +25,9 @@ from html5lib import treewalkers
 from html5lib import treebuilders
 from html5lib.filters import sanitizer
 
-from repoze.lru import lru_cache
+from repoze.lru import CacheMaker
+
+from html2text import html2text
 
 from nti.contentfragments.interfaces import IAllowedAttributeProvider
 
@@ -301,7 +303,7 @@ def _to_sanitized_doc(user_input):
     # <html>...</html> => <html><body>&lthtml&gt...&lt/html&gt</html>
     __traceback_info__ = user_input
     p = HTMLParser(tree=treebuilders.getTreeBuilder("lxml"),
-                    namespaceHTMLElements=False)
+                   namespaceHTMLElements=False)
     doc = p.parse(user_input)
     string = _html5lib_tostring(doc, sanitize=True)
 
@@ -315,10 +317,6 @@ def _to_sanitized_doc(user_input):
     doc = p.parse(string)
     return doc
 
-def _doc_to_plain_text(doc):
-    string = etree_tostring(doc, method='text', encoding=unicode)
-    return PlainTextContentFragment(string)
-
 def sanitize_user_html(user_input, method='html'):
     """
     Given a user input string of plain text, HTML or HTML fragment, sanitize
@@ -329,12 +327,19 @@ def sanitize_user_html(user_input, method='html'):
         :func:`lxml.etree.tostring`. The default value, ``html``, causes this
         method to produce either HTML or plain text, whatever is most appropriate.
         Passing the value ``text`` causes this method to produce only plain text captured
-        by traversing the elements with lxml.
+        by traversing the elements with lxml. Note: this is legacy functionality,
+        and callers should generally convert via calling the interfaces.
 
     :return: Something that implements :class:`frg_interfaces.IUnicodeContentFragment`,
         typically either :class:`frg_interfaces.IPlainTextContentFragment` or
         :class:`frg_interfaces.ISanitizedHTMLContentFragment`.
     """
+    # Registered as the adapter from (bytes/unicode) -> IUnicodeContentFragment
+    # And as the adapter from IHTMLContentFragment -> ISanitizedHTMLContentFragment
+    # (even though that may be plain text).
+
+    if method == 'text':
+        return _sanitize_user_html_to_text(user_input)
 
     doc = _to_sanitized_doc(user_input)
 
@@ -375,9 +380,6 @@ def sanitize_user_html(user_input, method='html'):
             new_style = style + (' ' if style else '') + 'max-width: 100%;'
             node.attrib['style'] = new_style
 
-    if method == 'text':
-        return _doc_to_plain_text(doc)
-
     string = _html5lib_tostring(doc, sanitize=False)
     # If we can go back to plain text, do so.
     normalized = string[len('<html><head></head><body>'): 0 - len('</body></html>')]
@@ -388,8 +390,10 @@ def sanitize_user_html(user_input, method='html'):
     # If it has no more tags, we can be plain text.
     # TODO: This probably breaks on entities like &lt;
     if '<' not in normalized:
-        # 03.2016 - JZ - We no longer want to lstrip.
-        string = PlainTextContentFragment(normalized.rstrip())
+        # Going via the to-markdown converter yields prettier results than simply
+        # returning a PlainTextContentFragment. This does mean we parse it twice,
+        # but html2text is fast.
+        string = _sanitize_user_html_to_text(user_input)
     else:
         string = SanitizedHTMLContentFragment(u"<html><body>" + normalized + u"</body></html>")
     return string
@@ -401,9 +405,11 @@ def sanitize_user_html(user_input, method='html'):
 # in a non-persistent field of the object? (But the objects aren't Persistent, so
 # _v fields might not work?)
 
+_cache_maker = CacheMaker(10000)
+
 @interface.implementer(IPlainTextContentFragment)
 @component.adapter(basestring)
-@lru_cache(10000)
+@_cache_maker.lrucache()
 def _sanitize_user_html_to_text(user_input):
     """
     Registered as an adapter with the name 'text' for convenience.
@@ -415,25 +421,37 @@ def _sanitize_user_html_to_text(user_input):
     # of input already. It messes the content up if we try to reparse
     if IPlainTextContentFragment.providedBy(user_input):
         return user_input
-    __traceback_info__ = user_input, type(user_input)
 
-    return sanitize_user_html(user_input, method='text')
+    # Decode to unicode using a sequence that doesn't lose any bytes;
+    # let the HTML parser deal with anything at a higher level.
+    if isinstance(user_input, bytes):
+        user_input = user_input.decode('latin-1')
+
+    # Using a wider bodywidth helps prevent unneeded line breaks,
+    # especially in tests.
+    output = html2text(user_input, bodywidth=100)
+
+    # The old lxml-based implementation stripped trailing whitespace on each line; for compatibility
+    # do the same
+    output = '\n'.join(l.rstrip() for l in output.splitlines())
+    output = output.rstrip()
+    return PlainTextContentFragment(output)
 
 @interface.implementer(IPlainTextContentFragment)
 @component.adapter(IHTMLContentFragment)
-@lru_cache(10000)
+@_cache_maker.lrucache()
 def _html_to_sanitized_text(html):
-    if IPlainTextContentFragment.providedBy(html):
-        return html
-    __traceback_info__ = html, type(html)
-
-    return _doc_to_plain_text(_to_sanitized_doc(html))
+    return _sanitize_user_html_to_text(html)
 
 @interface.implementer(IPlainTextContentFragment)
 @component.adapter(ISanitizedHTMLContentFragment)
-@lru_cache(10000)
+@_cache_maker.lrucache()
 def _sanitized_html_to_sanitized_text(sanitized_html):
-    p = HTMLParser(tree=treebuilders.getTreeBuilder("lxml"),
-                   namespaceHTMLElements=False)
-    doc = p.parse(sanitized_html)
-    return _doc_to_plain_text(doc)
+    return _sanitize_user_html_to_text(sanitized_html)
+
+try:
+    from zope.testing.cleanup import addCleanUp
+except ImportError: # pragma: no cover
+    pass
+else:
+    addCleanUp(_cache_maker.clear)

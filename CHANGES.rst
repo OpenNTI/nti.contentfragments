@@ -7,7 +7,9 @@
 
 - Add support for Python 3.9.
 - Move to Github Actions from Travis CI.
-
+- The algorithm for converting HTML to plain text has been changed and
+  produces higher quality output. For example, links are preserved in
+  a human-readable fashion. See `issue 39 <https://github.com/NextThought/nti.contentfragments/issues/39>`_.
 
 1.7.0 (2020-10-07)
 ==================
@@ -19,7 +21,7 @@
 ==================
 
 - Ensure disallowed tags nested within anchors do not raise.
-  See `issue 34 <https://github.com/NextThought/nti.contentfragments/issues/34>`.
+  See `issue 34 <https://github.com/NextThought/nti.contentfragments/issues/34>`_.
 
 
 1.6.0 (2020-09-02)
