@@ -5,11 +5,14 @@
 1.8.0 (unreleased)
 ==================
 
-- Add support for Python 3.9.
+- Add support for Python 3.9 and 3.10.
 - Move to Github Actions from Travis CI.
 - The algorithm for converting HTML to plain text has been changed and
   produces higher quality output. For example, links are preserved in
   a human-readable fashion. See `issue 39 <https://github.com/NextThought/nti.contentfragments/issues/39>`_.
+- Fix an error getting link text when there was no link formatter
+  utility installed. See `PR 42
+  <https://github.com/NextThought/nti.contentfragments/pull/41#event-5422788226>`_.
 
 1.7.0 (2020-10-07)
 ==================
