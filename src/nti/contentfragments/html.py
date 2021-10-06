@@ -110,6 +110,22 @@ sanitizer.re = FakeRe()
 
 from html5lib.constants import namespaces
 
+
+@interface.implementer(IHyperlinkFormatter)
+class _NoopHyperlinkFormatter(object):
+    """
+    A fallback hyperlink formatter that does not attempt to identify
+    links in the provided text.
+    """
+
+    def find_links(self, text):
+        return (text, )
+
+    def format(self, html_fragment):
+        # TODO should this just return html_fragment?
+        raise NotImplemented
+
+
 # But we define our own sanitizer mixin subclass and filter to be able to
 # customize the allowed tags and protocols
 class _SanitizerFilter(sanitizer.Filter):
@@ -119,7 +135,8 @@ class _SanitizerFilter(sanitizer.Filter):
 
     def __init__(self, *args, **kwargs):
         super(_SanitizerFilter, self).__init__(*args, **kwargs)
-        self.link_finder = component.queryUtility(IHyperlinkFormatter)
+        self.link_finder = component.queryUtility(IHyperlinkFormatter,
+                                                  default=_NoopHyperlinkFormatter())
 
         acceptable_elements = frozenset([
             'a', 'audio',
@@ -196,10 +213,6 @@ class _SanitizerFilter(sanitizer.Filter):
                     yield token
 
     def _find_links_in_text(self, token):
-        if self.link_finder is None:
-            yield token
-            return
-            
         text = token['data']
         text_and_links = self.link_finder.find_links(text)
         if len(text_and_links) != 1 or text_and_links[0] != text:
