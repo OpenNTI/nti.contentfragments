@@ -41,6 +41,34 @@ except NameError:
 Element = getattr(etree, 'Element')
 etree_tostring = getattr(etree, 'tostring')
 
+# This regex is basen on one from Python 3's html.parser module;
+# it is used in the parser's ``check_for_whole_start_tag`` method.
+# That regex in turn comes from the HTML5 specification.
+locatestarttagend_tolerant = re.compile(r"""
+  <[a-zA-Z][^\t\n\r\f />\x00]*       # tag name
+  (?:[\s/]*                          # optional whitespace before attribute name
+    (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
+      (?:\s*=+\s*                    # value indicator
+        (?:'[^']*'                   # LITA-enclosed value
+          |"[^"]*"                   # LIT-enclosed value
+          |(?!['"])[^>\s]*           # bare value
+         )
+        \s*                          # possibly followed by a space
+       )?(?:\s|/(?!>))*
+     )*
+   )?
+  \s*                                # trailing whitespace
+""", re.VERBOSE)
+# Likewise, these come from the same module. The detect ``&nbsp;``
+# and friends.
+entityref = re.compile(u'&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
+charref = re.compile(u'&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
+# TODO: It would be nice (perhaps a performance win?) to be able to combine
+# the three expressions into a single expression. The naive way, simply
+# concatenating them with ``(...)|(...)|(...)``, doesn't work (probably
+# because of the VERBOSE flag)
+
+
 # serializer.xhtmlserializer.XHTMLSerializer is removed in html5lib 1.0.
 # It was simply defined as:
 #
@@ -123,7 +151,7 @@ class _NoopHyperlinkFormatter(object):
 
     def format(self, html_fragment):
         # TODO should this just return html_fragment?
-        raise NotImplemented # pragma: no cover
+        raise NotImplementedError # pragma: no cover
 
 
 # But we define our own sanitizer mixin subclass and filter to be able to
@@ -355,6 +383,9 @@ def sanitize_user_html(user_input, method='html'):
     # And as the adapter from IHTMLContentFragment -> ISanitizedHTMLContentFragment
     # (even though that may be plain text).
 
+    if not may_contain_html_like_markup(user_input):
+        return _sanitize_user_html_to_text(user_input, _guaranteed_no_markup=True)
+
     if method == 'text':
         return _sanitize_user_html_to_text(user_input)
 
@@ -405,11 +436,12 @@ def sanitize_user_html(user_input, method='html'):
         normalized = normalized[0:-6]
 
     # If it has no more tags, we can be plain text.
-    # TODO: This probably breaks on entities like &lt;
-    if '<' not in normalized:
+    if not may_contain_html_like_markup(normalized):
         # Going via the to-markdown converter yields prettier results than simply
         # returning a PlainTextContentFragment. This does mean we parse it twice,
         # but html2text is fast.
+        # TODO: does this suffer from issue 44, notably, being too aggressive about
+        # some conversions?
         string = _sanitize_user_html_to_text(user_input)
     else:
         string = SanitizedHTMLContentFragment(u"<html><body>" + normalized + u"</body></html>")
@@ -424,14 +456,57 @@ def sanitize_user_html(user_input, method='html'):
 
 _cache_maker = CacheMaker(10000)
 
+def _ensure_unicode_non_lossy(user_input):
+    # Decode to unicode using an encoding that doesn't lose any bytes;
+    # let the HTML parser deal with anything at a higher level.
+    if isinstance(user_input, bytes):
+        user_input = user_input.decode('latin-1')
+    return user_input
+
+@_cache_maker.lrucache()
+def may_contain_html_like_markup(user_input):
+    # Detect if there are valid start tags or entity/character references that should
+    # be stripped/replaced.
+
+    # Python 2 can match bytes patterns against unicode or bytes input, and vice versa,
+    # unicode patterns against bytes or unicode input. However, Python 3 only works
+    # when both pattern and input are the same type. The patterns will be unicode on Python 3,
+    # so make sure our input is as well.
+    user_input = _ensure_unicode_non_lossy(user_input)
+
+    # search() -> match anywhere in the string; match() -> only the beginning
+
+    return (
+        locatestarttagend_tolerant.search(user_input)
+        or entityref.search(user_input)
+        or charref.search(user_input)
+    )
+
+
 @interface.implementer(IPlainTextContentFragment)
 @component.adapter(basestring)
 @_cache_maker.lrucache()
-def _sanitize_user_html_to_text(user_input):
+def _sanitize_user_html_to_text(user_input, _guaranteed_no_markup=False):
     """
+    _sanitize_user_html_to_text(user_input) -> str
+
     Registered as an adapter with the name 'text' for convenience.
 
     See :func:`sanitize_user_html`.
+
+    .. caution::
+       While this adapter accepts an arbitrary base string, it does not actually
+       guarantee the output is totally plain text suitable for any purpose.
+       In particular, it only attempts to extract human-readable text from things
+       that look like HTML markup while preserving most information such as links.
+       It does not attempt to extract human-readable text from things like
+       LaTeX or ReST input; input in forms like that may be returned unaltered or
+       altered beyond recognition.
+
+       This adapter also does not attempt to escape any characters that may have
+       special meaning to HTML, such as ``<`` if the input does not otherwise appear to be
+       HTML.
+
     """
     # We are sometimes used as a named adapter, or even sadly called
     # directly, which means we can get called even with the right kind
@@ -441,12 +516,14 @@ def _sanitize_user_html_to_text(user_input):
 
     # Decode to unicode using a sequence that doesn't lose any bytes;
     # let the HTML parser deal with anything at a higher level.
-    if isinstance(user_input, bytes):
-        user_input = user_input.decode('latin-1')
+    user_input = _ensure_unicode_non_lossy(user_input)
 
-    # Using a wider bodywidth helps prevent unneeded line breaks,
-    # especially in tests.
-    output = html2text(user_input, bodywidth=100)
+    if _guaranteed_no_markup or not may_contain_html_like_markup(user_input):
+        output = user_input
+    else:
+        # Using a wider bodywidth helps prevent unneeded line breaks,
+        # especially in tests.
+        output = html2text(user_input, bodywidth=100)
 
     # The old lxml-based implementation stripped trailing whitespace on each line; for compatibility
     # do the same

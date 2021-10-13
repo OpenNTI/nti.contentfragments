@@ -5,7 +5,12 @@
 1.8.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Fix adapting base string input to plain text to behave more like 1.7
+  by only running the HTML to plain text algorithm if the input looks
+  like it may contain HTML markup. Note that in some instances where
+  characters like '<' were previously escaped to '&lt;', this will no
+  longer happen if the rest of the string doesn't look like HTML. See `issue 44
+  <https://github.com/NextThought/nti.contentfragments/issues/44>`_.
 
 
 1.8.0 (2021-10-06)

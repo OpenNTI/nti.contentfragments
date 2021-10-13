@@ -149,6 +149,40 @@ Some ending text.
         expt = u'Hi, Ken.  Here is the answer.  Check this website www_xyz_com\n'
         self._check_sanitized(html, expt)
 
+    def test_markdown_like_input(self):
+        # In 1.8, this improperly resulted in "2\\. Lesson 2"
+        # See https://github.com/NextThought/nti.contentfragments/issues/44
+        html = u'2. Lesson 2'
+        expt = html
+        self._check_sanitized(html, expt)
+
+        # What if it's across multiple lines?
+        # Note that we strip each line.
+        html = u'2. \n Lesson 2'
+        expt = u'2.\n Lesson 2'
+        self._check_sanitized(html, expt)
+
+    def test_doesnt_escape_HTML_chars(self):
+        # In 1.7.0, this produced '2 + 2 &lt; 5 &gt; 2 - 1?'
+        # In 1.8.0, this produced '<html><body>2 + 2 &lt; 5 &gt; 2 - 1? </body></html>'
+        # Now, we want to be consistent and not escape those characters
+        html = u'2 + 2 < 5 > 2 - 1? '
+        expt = html
+        self._check_sanitized(html, expt)
+
+    def test_tags_across_multiple_lines(self):
+        html_no_end_trailing_spaces = u'<div \nclass="cls"\n >Some body'
+        # Like no_end_trailing_spaces without the trailing spaces
+        html_no_end = u'<div\nclass="cls"\n>Some body'
+        expt = "Some body"
+
+        for html in html_no_end_trailing_spaces, html_no_end:
+            self._check_sanitized(html, expt)
+
+            html_with_end = html + u'</div>'
+            self._check_sanitized(html_with_end, expt)
+
+
 class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
 
     def _check_sanitized(self, html, expt): # pylint:disable=arguments-differ
