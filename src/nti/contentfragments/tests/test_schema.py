@@ -17,7 +17,7 @@ from hamcrest import raises
 
 from zope.dottedname import resolve as dottedname
 
-from nti.schema.interfaces import InvalidValue
+from zope.schema.interfaces import InvalidValue
 
 from nti.testing.matchers import validly_provides
 from nti.testing.matchers import is_false
@@ -38,11 +38,22 @@ def _make_test_class(kind_name, iface_name=None, base=FieldTestsMixin):
     assert issubclass(base, FieldTestsMixin)
 
     class T(base, ContentfragmentsLayerTest):
-        def _getTargetClass(self): # pylint:disable=unused-argument
-            return kind
+        _TARGET_CLASS = kind
+        # Some target classes are actually just callable functions, we don't want
+        # them to get bound like a method.
+        if not isinstance(kind, type):
+            def _getTargetClass(self):
+                return kind
+        else:
+            def _getTargetClass(self):
+                # the type's dictionary (we could access them on the type
+                # for Python 3, or make this a @classmethod, but in Python
+                # 2, doing so results in an unbound method object).
+                return self._TARGET_CLASS
 
-        def _getTargetInterface(self): # pylint:disable=unused-argument
-            return iface
+        _TARGET_INTERFACE = iface
+        def _getTargetInterface(self):
+            return self._TARGET_INTERFACE
 
     T.__name__ = 'Test' + kind_name
     T.__qualname__ = __name__ + '.' + T.__name__
@@ -59,6 +70,9 @@ class _FieldDoesConversionTestsMixin(FieldTestsMixin): # pylint:disable=abstract
     fdctm_sanitized_text = u'<html><body><a>Hi there!</a></body></html>'
     fdctm_sanitize_to = ISanitizedHTMLContentFragment
 
+    fdctm_trivial_html = u'<div>goody</div>'
+    fdctm_trivial_text = u'goody'
+
     def test_invalid_html_sanitizes(self):
         t = self._makeOne()
 
@@ -69,10 +83,10 @@ class _FieldDoesConversionTestsMixin(FieldTestsMixin): # pylint:disable=abstract
 
     def test_simple_html_to_plain_text(self):
         t = self._makeOne()
-        result = t.fromUnicode(u'<div>goody</div>')
+        result = t.fromUnicode(self.fdctm_trivial_html)
         assert_that(result, validly_provides(IPlainTextContentFragment))
         assert_that(result, validly_provides(t.schema))
-        assert_that(result, is_(u'goody'))
+        assert_that(result, is_(self.fdctm_trivial_text))
 
 
 class TestTextUnicodeContentFragment(_make_test_class('TextUnicodeContentFragment',
@@ -91,6 +105,10 @@ TestPlainTextLine.fdctm_sanitize_to = IPlainTextContentFragment
 TestPlainTextLine.fdctm_sanitized_text = u"Hi there!"
 TestHTMLContentFragment = _make_test_class('HTMLContentFragment')
 
+class TestVerbatimPlainTextLine(TestPlainTextLine):
+    from nti.contentfragments.schema import VerbatimPlainTextLine as _TARGET_CLASS
+    fdctm_trivial_text = TestPlainTextLine.fdctm_trivial_html
+    fdctm_sanitized_text = TestPlainTextLine.fdctm_invalid_html
 
 class TestRstContentFragment(_make_test_class('RstContentFragment')):
 
@@ -112,6 +130,11 @@ class TestSanitizedHTMLContentFragment(_make_test_class('SanitizedHTMLContentFra
 TestPlainText = _make_test_class('PlainText', base=_FieldDoesConversionTestsMixin)
 TestPlainText.fdctm_sanitize_to = IPlainTextContentFragment
 TestPlainText.fdctm_sanitized_text = u"Hi there!"
+
+class TestVerbatimPlainText(TestPlainText):
+    from nti.contentfragments.schema import VerbatimPlainText as _TARGET_CLASS
+    fdctm_trivial_text = TestPlainText.fdctm_trivial_html
+    fdctm_sanitized_text = TestPlainText.fdctm_invalid_html
 
 class TestTag(_make_test_class('Tag', base=_FieldDoesConversionTestsMixin)):
 
