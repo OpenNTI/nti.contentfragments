@@ -4,7 +4,8 @@
 from __future__ import print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
-# pylint:disable=useless-object-inheritance
+
+import unittest
 
 from hamcrest import assert_that
 from hamcrest import is_
@@ -36,7 +37,7 @@ class ContentfragmentsTestLayer(ZopeComponentLayer, ConfiguringLayerMixin):
     def testTearDown(cls):
         pass
 
-import unittest
+
 
 class ContentfragmentsLayerTest(unittest.TestCase):
     layer = ContentfragmentsTestLayer

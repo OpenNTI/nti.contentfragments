@@ -356,6 +356,7 @@ intersphinx_mapping = {
     'https://zopeinterface.readthedocs.io/en/latest/': None,
     'https://zopecomponent.readthedocs.io/en/latest/': None,
     'https://zopesite.readthedocs.io/en/latest/': None,
+    'https://zopeschema.readthedocs.io/en/latest/': None,
 }
 
 extlinks = {'issue': ('https://github.com/NextThought/nti.contentfragments/issues/%s',
@@ -363,5 +364,15 @@ extlinks = {'issue': ('https://github.com/NextThought/nti.contentfragments/issue
             'pr': ('https://github.com/NextThought/nti.contentfragments/pull/%s',
                    'pull request #')}
 
-autodoc_default_flags = ['members', 'show-inheritance']
-autoclass_content = 'both'
+# Sphinx 1.8+ prefers this to `autodoc_default_flags`. It's documented that
+# either True or None mean the same thing as just setting the flag, but
+# only None works in 1.8 (True works in 2.0)
+autodoc_default_options = {
+    'members': None,
+    'show-inheritance': None,
+}
+autodoc_member_order = 'groupwise'
+# Normally we use "both" here to get
+# documentation from both __init__  and the class docstring,
+# but we inherit a bunch of weird stuff in __init__ for our schema fields.
+autoclass_content = 'class'
