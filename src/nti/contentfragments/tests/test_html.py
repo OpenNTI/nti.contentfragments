@@ -55,8 +55,8 @@ class _StringConversionMixin(object):
         inp = self.INP_FACTORY(inp)
         converted = self.CONV_IFACE(inp)
         __traceback_info__ = inp, type(inp), converted, type(converted)
-        assert_that(converted, is_(expect.strip()))
         assert_that(converted, verifiably_provides(self.EXP_IFACE))
+        assert_that(converted, is_(expect.strip()))
         return converted
 
     def _to_one_stripped_line(self, inp):
@@ -74,7 +74,11 @@ class _StringConversionMixin(object):
         super(_StringConversionMixin, self).tearDown()
 
 
-class TestStringInputToPlainTextOutput(_StringConversionMixin, ContentfragmentsLayerTest):
+class TestStringInputAsUnicodeReducesToPlainTextOutput(_StringConversionMixin,
+                                                       ContentfragmentsLayerTest):
+    # By using IUnicodeContentFragment to do the conversion, we're invoking the
+    # `sanitize_user_html` function, which returns the "best" or "cleanest" representation;
+    # all of these test cases here should reduce to plain text.
 
     EXP_IFACE = frg_interfaces.IPlainTextContentFragment
 
@@ -149,14 +153,66 @@ Some ending text.
         expt = u'Hi, Ken.  Here is the answer.  Check this website www_xyz_com\n'
         self._check_sanitized(html, expt)
 
-class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
+    def test_markdown_like_input(self):
+        # In 1.8, this improperly resulted in "2\\. Lesson 2"
+        # See https://github.com/NextThought/nti.contentfragments/issues/44
+        html = u'2. Lesson 2'
+        expt = html
+        self._check_sanitized(html, expt)
+
+        # What if it's across multiple lines?
+        # Note that we strip each line.
+        html = u'2. \n Lesson 2'
+        expt = u'2.\n Lesson 2'
+        self._check_sanitized(html, expt)
+
+    def test_doesnt_escape_HTML_chars(self):
+        # In 1.7.0, this produced '2 + 2 &lt; 5 &gt; 2 - 1?'
+        # In 1.8.0, this produced '<html><body>2 + 2 &lt; 5 &gt; 2 - 1? </body></html>'
+        # Now, we want to be consistent and not escape those characters
+        html = u'2 + 2 < 5 > 2 - 1? '
+        expt = html
+        self._check_sanitized(html, expt)
+
+    def test_tags_across_multiple_lines(self):
+        html_no_end_trailing_spaces = u'<div \nclass="cls"\n >Some body'
+        # Like no_end_trailing_spaces without the trailing spaces
+        html_no_end = u'<div\nclass="cls"\n>Some body'
+        expt = "Some body"
+
+        for html in html_no_end_trailing_spaces, html_no_end:
+            self._check_sanitized(html, expt)
+
+            html_with_end = html + u'</div>'
+            self._check_sanitized(html_with_end, expt)
+
+
+class TestByteInputAsUnicodeReducesToPlainTextOutput(
+        TestStringInputAsUnicodeReducesToPlainTextOutput):
 
     def _check_sanitized(self, html, expt): # pylint:disable=arguments-differ
         assert isinstance(html, type(u''))
         html = html.encode('latin-1')
-        return super(TestByteInputToPlainTextOutput, self)._check_sanitized(html, expt)
+        return super(TestByteInputAsUnicodeReducesToPlainTextOutput, self)._check_sanitized(html,
+                                                                                            expt)
 
-class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTest):
+
+class TestStringInputAsPlainText(_StringConversionMixin, ContentfragmentsLayerTest):
+
+    CONV_IFACE = frg_interfaces.IPlainTextContentFragment
+    EXP_IFACE = frg_interfaces.IPlainTextContentFragment
+
+    def test_unclosed_attribute(self):
+        # Note the HTML is invalid.
+        # In 1.7, this reduced to the empty string and a plain text fragment when going
+        # through IUnicodeContentFragment; we only get plain text, but GOOD plain text,
+        # in 1.8 if that's what we ask for.
+        html = u'<div><a onclick="window.location=\'http://google.com\'">Hi there!</a></div>'
+        expt = u'Hi there!'
+        self._check_sanitized(html, expt)
+
+
+class TestStringAsUnicodeToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTest):
 
     EXP_IFACE = frg_interfaces.ISanitizedHTMLContentFragment
 
@@ -233,6 +289,14 @@ class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTes
         # expected = """For help, email us"""
         expected = """For help, [email us](email:support@nextthought.com)"""
         assert_that(plain_text, is_(expected))
+
+    def test_unclosed_attribute(self):
+        # Note that the attribute string is unclosed.
+        # In 1.7, this resulted in '', the empty string and IPlainTextContentFragment
+        # In 1.8, we actually produce a ISanitizedHTMLContentFragment
+        html = u'<div><a onclick="window.location=\'http://google.com\'">Hi there!</a></div>'
+        expt = u'<html><body><a>Hi there!</a></body></html>'
+        self._check_sanitized(html, expt)
 
     def test_sanitize_user_html_chat(self):
         # Note this is badly malformed. The <a> tag is never closed,
