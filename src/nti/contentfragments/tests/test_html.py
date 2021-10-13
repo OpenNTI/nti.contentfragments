@@ -55,8 +55,8 @@ class _StringConversionMixin(object):
         inp = self.INP_FACTORY(inp)
         converted = self.CONV_IFACE(inp)
         __traceback_info__ = inp, type(inp), converted, type(converted)
-        assert_that(converted, is_(expect.strip()))
         assert_that(converted, verifiably_provides(self.EXP_IFACE))
+        assert_that(converted, is_(expect.strip()))
         return converted
 
     def _to_one_stripped_line(self, inp):
@@ -182,6 +182,17 @@ Some ending text.
             html_with_end = html + u'</div>'
             self._check_sanitized(html_with_end, expt)
 
+    def test_unclosed_attribute(self):
+        # Note that the attribute string is unclosed.
+        # In 1.7, this resulted in '', the empty string.
+        # In 1.8, we actually produce a ISanitizedHTMLContentFragment
+        html = u'<div><a onclick="window.location=\'http://google.com\'">Hi there!</a></div>'
+        expt = u'<html><body><a>Hi there!</a></body></html>'
+        self.EXP_IFACE = frg_interfaces.ISanitizedHTMLContentFragment
+        try:
+            self._check_sanitized(html, expt)
+        finally:
+            del self.EXP_IFACE
 
 class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
 
@@ -189,6 +200,7 @@ class TestByteInputToPlainTextOutput(TestStringInputToPlainTextOutput):
         assert isinstance(html, type(u''))
         html = html.encode('latin-1')
         return super(TestByteInputToPlainTextOutput, self)._check_sanitized(html, expt)
+
 
 class TestStringToSanitizedHTML(_StringConversionMixin, ContentfragmentsLayerTest):
 
