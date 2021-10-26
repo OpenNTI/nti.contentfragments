@@ -1,3 +1,13 @@
+[MASTER]
+extension-pkg-whitelist=gevent.greenlet,gevent.libuv._corecffi,gevent.libev._corecffi,gevent.libev._corecffi.lib,gevent.local,gevent._ident
+
+# Control the amount of potential inferred values when inferring a single
+# object. This can help the performance when dealing with large functions or
+# complex, nested conditions. But it can also result in false positives.
+# gevent: The changes for Python 3.7 in _ssl3.py lead to infinite recursion
+# in pylint 2.3.1/astroid 2.2.5 in that file unless we this this to 1
+# from the default of 100.
+#limit-inference-results=1
 
 [MESSAGES CONTROL]
 
@@ -28,9 +38,19 @@
 #   see https://github.com/PyCQA/pylint/issues/846
 # useless-suppression: the only way to avoid repeating it for specific statements everywhere that we
 #   do Py2/Py3 stuff is to put it here. Sadly this means that we might get better but not realize it.
-disable=wrong-import-position,
-    wrong-import-order,
-    missing-docstring,
+# In pylint 1.8.0, inconsistent-return-statements are created for the wrong reasons.
+# This code raises it, even though there's only one return (the implicit 'return None' is presumably
+# what triggers it):
+#  def foo():
+#    if baz:
+#      return 1
+# In Pylint 2dev1, needed for Python 3.7, we get spurious 'useless return' errors:
+# @property
+# def foo(self):
+#   return None # generates useless-return
+# Pylint 2.4 adds import-outside-toplevel. But we do that a lot to defer imports because of patching.
+# Pylint 2.6+ adds some python-3-only things that don't apply: raise-missing-from, super-with-arguments, consider-using-f-string, redundant-u-string-prefix
+disable=missing-docstring,
     ungrouped-imports,
     invalid-name,
     protected-access,
@@ -44,15 +64,19 @@ disable=wrong-import-position,
     too-many-arguments,
     redefined-builtin,
     useless-suppression,
-    mixed-indentation,
-    useless-object-inheritance
-
-#	undefined-all-variable
-
+    inconsistent-return-statements,
+    useless-return,
+    useless-object-inheritance,
+    import-outside-toplevel,
+    raise-missing-from,
+    super-with-arguments,
+    consider-using-f-string,
+    redundant-u-string-prefix
 
 [FORMAT]
 # duplicated from setup.cfg
 max-line-length=160
+max-module-lines=1100
 
 [MISCELLANEOUS]
 # List of note tags to take in consideration, separated by a comma.
@@ -73,24 +97,28 @@ dummy-variables-rgx=_.*
 generated-members=exc_clear
 
 # List of classes names for which member attributes should not be checked
-# (useful for classes with attributes dynamically set). This supports can work
+# (useful for classes with attributes dynamically set). This can work
 # with qualified names.
-# greenlet, Greenlet, parent, dead: all attempts to fix issues in greenlet.py
-# only seen on the service, e.g., self.parent.loop: class parent has no loop
-ignored-classes=SSLContext, SSLSocket, greenlet, Greenlet, parent, dead
+#ignored-classes=SSLContext, SSLSocket, greenlet, Greenlet, parent, dead
+
 
 # List of module names for which member attributes should not be checked
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis. It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=gevent._corecffi
+ignored-modules=gevent._corecffi,gevent.os,os,threading,gevent.libev.corecffi,gevent.socket,gevent.core,gevent.testing.support
 
 [DESIGN]
 max-attributes=12
+max-parents=10
 
 [BASIC]
 bad-functions=input
 # Prospector turns ot unsafe-load-any-extension by default, but
 # pylint leaves it off. This is the proximal cause of the
 # undefined-all-variable crash.
-#unsafe-load-any-extension = no
+unsafe-load-any-extension = yes
+
+# Local Variables:
+# mode: conf
+# End:

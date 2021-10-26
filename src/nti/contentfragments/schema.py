@@ -3,14 +3,10 @@
 """
 Helper classes to use content fragments in :mod:`zope.interface`
 or :mod:`zope.schema` declarations.
-
-.. $Id: schema.py 85352 2016-03-26 19:08:54Z carlos.sanchez $
 """
 
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
-
-logger = __import__('logging').getLogger(__name__)
 
 # pylint: disable=too-many-ancestors
 # pylint:disable=useless-object-inheritance
@@ -23,6 +19,12 @@ import six
 from zope.interface import implementer
 
 from zope.schema.interfaces import InvalidValue
+
+
+from nti.schema.field import Object
+from nti.schema.field import ValidText as Text
+from nti.schema.field import ValidTextLine as TextLine
+
 
 from .interfaces import HTMLContentFragment as HTMLContentFragmentType
 from .interfaces import IHTMLContentFragment
@@ -49,10 +51,6 @@ from .interfaces import IRstContentFragmentField
 
 from .rst import RstParseError
 
-from nti.schema.field import Object
-from nti.schema.field import ValidText as Text
-from nti.schema.field import ValidTextLine as TextLine
-
 
 class _FromUnicodeMixin(object):
 
@@ -72,6 +70,7 @@ class _FromUnicodeMixin(object):
             self._iface_upper_bound or self._iface, # Becomes self.schema.
             *args,
             **self.__massage_kwargs(kwargs))
+        self._fromUnicodeMixin_adapt_to_schema = self.schema
 
     def __massage_kwargs(self, kwargs):
 
@@ -102,7 +101,7 @@ class _FromUnicodeMixin(object):
         # changes are needed under CPython). So we must handle normalization ourself
         # before converting to the schema.
         value = unicodedata.normalize(self.__class__.unicode_normalization, value)
-        value = self.schema(value)
+        value = self._fromUnicodeMixin_adapt_to_schema(value)
         result = super(_FromUnicodeMixin, self).fromUnicode(value)
         return result
 
@@ -110,11 +109,20 @@ class _FromUnicodeMixin(object):
 @implementer(ITextUnicodeContentFragmentField)
 class TextUnicodeContentFragment(_FromUnicodeMixin, Object, Text):
     """
-    A :class:`zope.schema.Text` type that also requires the object implement
-    an interface descending from :class:`~.IUnicodeContentFragment`.
+    A :class:`zope.schema.Text` type that also requires the object
+    implement an interface descending from
+    :class:`~.IUnicodeContentFragment`.
 
-    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`zope.schema.Text` to the
+    constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
+
+    .. caution::
+
+        This will perform conversions on the input data, stripping or adjusting
+        things that "look like" HTML, if it does not already implement the required interface;
+        the actual value is likely to be a :class:`~.ISanitizedHTMLContentFragment`
+        or a :class:`~.IPlainTextContentFragment`.
     """
 
     _iface = IUnicodeContentFragment
@@ -124,14 +132,25 @@ class TextUnicodeContentFragment(_FromUnicodeMixin, Object, Text):
 @implementer(ITextLineUnicodeContentFragmentField)
 class TextLineUnicodeContentFragment(_FromUnicodeMixin, Object, TextLine):
     """
-    A :class:`zope.schema.TextLine` type that also requires the object implement
-    an interface descending from :class:`~.IUnicodeContentFragment`.
+    A :class:`zope.schema.TextLine` type that also requires the object
+    implement an interface descending from
+    :class:`~.IUnicodeContentFragment`.
 
-    Pass the keyword arguments for :class:`zope.schema.TextLine` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`zope.schema.TextLine` to
+    the constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    If you pass neither a `default` nor `defaultFactory` argument, a `defaultFactory`
-    argument will be provided to construct an empty content fragment.
+    If you pass neither a *default* nor *defaultFactory* argument, a
+    *defaultFactory* argument will be provided to construct an empty
+    content fragment.
+
+    .. caution::
+
+        This will perform conversions on the input data, stripping or adjusting
+        things that "look like" HTML, if it does not already implement the required interface;
+        the actual value is
+        likely to be a :class:`~.ISanitizedHTMLContentFragment`
+        or a :class:`~.IPlainTextContentFragment`.
     """
 
     _iface = IUnicodeContentFragment
@@ -141,12 +160,17 @@ class TextLineUnicodeContentFragment(_FromUnicodeMixin, Object, TextLine):
 @implementer(ILatexFragmentTextLineField)
 class LatexFragmentTextLine(TextLineUnicodeContentFragment):
     """
-    A :class:`~zope.schema.TextLine` that requires content to be in LaTeX format.
+    A :class:`~zope.schema.TextLine` that requires content to be in
+    LaTeX format.
 
-    Pass the keyword arguments for :class:`~zope.schema.TextLine` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`~zope.schema.TextLine` to
+    the constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.ILatexContentFragment`,
+    .. note::
+
+        If you provide a *default* string that does not
+        already provide :class:`.ILatexContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
     """
 
@@ -157,29 +181,56 @@ class LatexFragmentTextLine(TextLineUnicodeContentFragment):
 @implementer(IPlainTextLineField)
 class PlainTextLine(TextLineUnicodeContentFragment):
     """
-    A :class:`~zope.schema.TextLine` that requires content to be plain text.
+    A :class:`~zope.schema.TextLine` that requires content to be plain
+    text.
 
-    Pass the keyword arguments for :class:`~zope.schema.TextLine` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`~zope.schema.TextLine` to
+    the constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.ILatexContentFragment`,
+    .. note::
+
+        If you provide a *default* string that does
+        not already provide :class:`.ILatexContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
+
+    .. caution::
+
+        This will perform conversions on the input data, stripping
+        things that "look like" HTML, if it does not already implement the required interface.
     """
 
     _iface = IPlainTextContentFragment
     _impl = PlainTextContentFragment
 
 
+class VerbatimPlainTextLine(PlainTextLine):
+    """
+    Like `PlainTextLine`, except instead of running a conversion on the
+    input data, stripping HTML, will simply assume that the input data
+    is already meant to be plain text and will preserve markup as-is.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(VerbatimPlainTextLine, self).__init__(*args, **kwargs)
+        # We adapt by just copying
+        self._fromUnicodeMixin_adapt_to_schema = self._impl
+
+
 @implementer(IHTMLContentFragmentField)
 class HTMLContentFragment(TextUnicodeContentFragment):
     """
-    A :class:`~zope.schema.Text` type that also requires the object implement
-    an interface descending from :class:`.IHTMLContentFragment`.
+    A :class:`~zope.schema.Text` type that also requires the object
+    implement an interface descending from
+    :class:`.IHTMLContentFragment`.
 
-    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`zope.schema.Text` to the
+    constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.IHTMLContentFragment`,
+    .. note::
+
+        If you provide a *default* string that does not already provide :class:`.IHTMLContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
     """
 
@@ -190,17 +241,20 @@ class HTMLContentFragment(TextUnicodeContentFragment):
 @implementer(ISanitizedHTMLContentFragmentField)
 class SanitizedHTMLContentFragment(HTMLContentFragment):
     """
-    A :class:`Text` type that also requires the object implement
-    an interface descending from :class:`.ISanitizedHTMLContentFragment`.
+    A :class:`Text` type that also requires the object implement an
+    interface descending from :class:`.ISanitizedHTMLContentFragment`.
     Note that the default adapter for this can actually produce
-    ``IPlainTextContentFragment`` if there is no HTML present in the input.
+    ``IPlainTextContentFragment`` if there is no HTML present in the
+    input.
 
-    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`zope.schema.Text` to the
+    constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.ISanitizedHTMLContentFragment`,
+    .. note::
+
+        If you provide a ``default`` string that does not already provide :class:`.ISanitizedHTMLContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
-
     """
 
     _iface = ISanitizedHTMLContentFragment
@@ -210,17 +264,19 @@ class SanitizedHTMLContentFragment(HTMLContentFragment):
 @implementer(IRstContentFragmentField)
 class RstContentFragment(TextUnicodeContentFragment):
     """
-    A :class:`Text` type that also requires the object implement
-    an interface descending from :class:`.IRstContentFragment`.
-    Note that currently this does no validation of the content to
-    ensure it is valid reStructuredText.
+    A :class:`zope.schema.Text` type that also requires the object implement an
+    interface descending from :class:`~.IRstContentFragment`. Note that
+    currently this does no validation of the content to ensure it is
+    valid reStructuredText.
 
-    Pass the keyword arguments for :class:`zope.schema.Text` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`zope.schema.Text` to the
+    constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.IRstContentFragment`,
+    .. note::
+
+        If you provide a *default* string that does not already provide :class:`.IRstContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
-
     """
 
     _iface = IRstContentFragment
@@ -237,17 +293,38 @@ class RstContentFragment(TextUnicodeContentFragment):
 @implementer(IPlainTextField)
 class PlainText(TextUnicodeContentFragment):
     """
-    A :class:`zope.schema.Text` that requires content to be plain text.
+    A :class:`zope.schema.Text` that requires content to be plain
+    text.
 
-    Pass the keyword arguments for :class:`~zope.schema.Text` to the constructor; the ``schema``
-    argument for :class:`~zope.schema.Object` is already handled.
+    Pass the keyword arguments for :class:`~zope.schema.Text` to the
+    constructor; the ``schema`` argument for
+    :class:`~zope.schema.Object` is already handled.
 
-    .. note:: If you provide a ``default`` string that does not already provide :class:`.IPlainTextContentFragment`,
+    .. note::
+
+        If you provide a *default* string that does not already provide :class:`.IPlainTextContentFragment`,
         one will be created simply by copying; no validation or transformation will occur.
+
+    .. caution::
+
+        This will perform conversions on the input data, stripping
+        things that "look like" HTML, if it does not already implement the required interface.
     """
 
     _iface = IPlainTextContentFragment
     _impl = PlainTextContentFragment
+
+class VerbatimPlainText(PlainText):
+    """
+    Like `PlainText`, except instead of running a conversion on the
+    input data, stripping HTML, will simply assume that the input data
+    is already meant to be plain text and will preserve markup as-is.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(VerbatimPlainText, self).__init__(*args, **kwargs)
+        # We adapt by just copying
+        self._fromUnicodeMixin_adapt_to_schema = self._impl
 
 
 @implementer(ITagField)
@@ -259,7 +336,7 @@ class Tag(PlainTextLine):
     def fromUnicode(self, value):
         return super(Tag, self).fromUnicode(value.lower())
 
-    def constraint(self, value):
+    def constraint(self, value): # pylint:disable=method-hidden
         return super(Tag, self).constraint(value) and ' ' not in value
 
 def Title():

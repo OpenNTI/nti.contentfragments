@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.8.1 (unreleased)
+1.9.0 (unreleased)
 ==================
 
 - Fix adapting base string input to plain text to behave more like 1.7
@@ -11,7 +11,10 @@
   characters like '<' were previously escaped to '&lt;', this will no
   longer happen if the rest of the string doesn't look like HTML. See `issue 44
   <https://github.com/NextThought/nti.contentfragments/issues/44>`_.
-
+- Add schema fields ``VerbatimPlainText`` and
+  ``VerbatimPlainTextLine`` to assume any incoming unicode value
+  already represents a plain text content fragment, instead of
+  (possibly) passing it through the HTML to plain text algorithm.
 
 1.8.0 (2021-10-06)
 ==================
