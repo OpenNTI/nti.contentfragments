@@ -2,7 +2,7 @@
  Changes
 =========
 
-1.9.0 (unreleased)
+1.9.0 (2021-10-26)
 ==================
 
 - Fix adapting base string input to plain text to behave more like 1.7
