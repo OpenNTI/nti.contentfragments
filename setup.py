@@ -27,7 +27,7 @@ setup(
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI ContentFragments",
-    url="https://github.com/NextThought/nti.contentfragments",
+    url="https://github.com/OpenNTI/nti.contentfragments",
     long_description=_read('README.rst') + '\n\n' + _read('CHANGES.rst'),
     license='Apache',
     keywords='Content fragments semantic typing interfaces classes sanitize censor',
@@ -35,6 +35,7 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
@@ -55,7 +56,7 @@ setup(
     install_requires=[
         'setuptools',
         # XXX: We deliberately leave this one unspecified. See
-        # https://github.com/NextThought/nti.contentfragments/issues/17
+        # https://github.com/OpenNTI/nti.contentfragments/issues/17
         'html5lib',
         # we required lxml implementation details, can't use
         # xml.etree.ElementTree, even on PyPy.
